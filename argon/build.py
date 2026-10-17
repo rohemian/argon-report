@@ -430,10 +430,11 @@ KAKAO = f"""[Heeyun's Argon] {DATA['meta']['date']} {edition}
 
 # ---------------- 렌더 ----------------
 W = os.path.join(HERE, "web")
+MOBILE = open(os.path.join(W, "mobile.css"), encoding="utf-8").read()
 tpl = open(os.path.join(W, "base.html"), encoding="utf-8").read()
 css = "".join(open(os.path.join(W, f), encoding="utf-8").read() + "\n" for f in ("v2.css", "v3.css"))
 js = "".join(open(os.path.join(W, f), encoding="utf-8").read() + "\n" for f in ("v2.js", "v3.js"))
-tpl = tpl.replace("</style>", css + "</style>", 1).replace("const builders=[card1", js + "\nconst builders=[card1", 1).replace("/*__KAKAO__*/", KAKAO)
+tpl = tpl.replace("</style>", css + MOBILE + "</style>", 1).replace("const builders=[card1", js + "\nconst builders=[card1", 1).replace("/*__KAKAO__*/", KAKAO)
 J = json.dumps(DATA, ensure_ascii=False, default=float)
 OUT = os.path.join(ROOT, "site"); os.makedirs(OUT, exist_ok=True)
 open(os.path.join(OUT, "index.html"), "w", encoding="utf-8").write(tpl.replace("/*__DATA__*/null", J).replace("/*__ONLY__*/0", "0").replace("/*__LIVE__*/true", "true"))

@@ -160,17 +160,66 @@ h2 small{font-weight:500;color:var(--mute);font-size:12px;margin-left:auto}
 <body>
 <div class="nav" id="nav"><div class="nav-in">
   <div class="brand">HEEYUN'S ARGON<small>데일리 퀀트 데스크</small></div>
-  <button class="btn" onclick="saveCard(1)">1번 저장</button>
-  <button class="btn" onclick="saveCard(2)">2번 저장</button>
-  <button class="btn" onclick="saveCard(3)">3번 저장</button>
-  <button class="btn" onclick="saveCard(4)">4번 저장</button>
-  <button class="btn" onclick="saveCard(5)">5번 저장</button>
-  <a class="btn" href="check.html" style="text-decoration:none;border-color:var(--amber);color:var(--amber2)">🔍 종목 점수 조회</a>
-  <button class="btn pri" onclick="downloadAllSequential()">전체 저장</button>
-  <button class="btn" onclick="copyKakao()">카톡 요약 복사</button>
+  <div class="dact">
+    <button class="btn" onclick="saveCard(1)">1번 저장</button>
+    <button class="btn" onclick="saveCard(2)">2번 저장</button>
+    <button class="btn" onclick="saveCard(3)">3번 저장</button>
+    <button class="btn" onclick="saveCard(4)">4번 저장</button>
+    <button class="btn" onclick="saveCard(5)">5번 저장</button>
+    <a class="btn" href="check.html" style="text-decoration:none;border-color:var(--amber);color:var(--amber2)">🔍 종목 점수 조회</a>
+    <button class="btn pri" onclick="downloadAllSequential()">전체 저장</button>
+    <button class="btn" onclick="copyKakao()">카톡 요약 복사</button>
+  </div>
+  <button class="fopen" id="fopen" type="button" aria-label="글씨 크기 바꾸기">가</button>
+  <button class="mopen" id="mopen" aria-expanded="false" aria-controls="msheet">☰ 저장 · 도구</button>
   <div class="live"><span class="dot" id="ldot"></span><span id="lmsg">크립토 실시간 연결 준비 중</span>
     <button class="btn" style="margin-left:auto;padding:4px 8px" onclick="refreshLive()">지금 갱신</button></div>
 </div></div>
+<div class="msheet" id="msheet" role="dialog" aria-modal="true" aria-label="저장 및 도구">
+  <div class="mp">
+    <div class="bar"></div>
+    <div class="mh">저장 &amp; 도구</div>
+    <div class="ms" id="mlive">크립토 실시간 연결 준비 중</div>
+    <div class="grid5">
+      <button onclick="saveCard(1)">1번 저장</button>
+      <button onclick="saveCard(2)">2번 저장</button>
+      <button onclick="saveCard(3)">3번 저장</button>
+      <button onclick="saveCard(4)">4번 저장</button>
+      <button onclick="saveCard(5)">5번 저장</button>
+      <button class="pri" onclick="downloadAllSequential()">전체 저장</button>
+    </div>
+    <div class="mg">
+      <a class="mb go" href="check.html">🔍 종목 점수 조회 · 4,450개</a>
+      <button onclick="copyKakao()">📋 카톡 요약 복사</button>
+      <button onclick="refreshLive()">🔄 지금 갱신</button>
+      <button onclick="__mnavClose()">닫기</button>
+    </div>
+    <div class="lbl">글씨 크기</div>
+    <div class="fsrow">
+      <button class="fsbtn" data-fs="1" type="button">보통</button>
+      <button class="fsbtn" data-fs="2" type="button">크게</button>
+      <button class="fsbtn" data-fs="3" type="button">아주 크게</button>
+    </div>
+    <div class="note">카드를 저장하면 이 폰 화면 크기에 맞춘 이미지로 내려받아요. 카톡·인스타에 그대로 붙여넣으면 됩니다. (PC에서 저장하면 원래대로 840px 카드)</div>
+  </div>
+</div>
+<script>
+(function(){
+  function mm(){return document.getElementById('mopen')}
+  function open(){document.body.classList.add('mshow');var b=mm();if(b)b.setAttribute('aria-expanded','true')}
+  function close(){document.body.classList.remove('mshow');var b=mm();if(b)b.setAttribute('aria-expanded','false')}
+  window.__mnavClose=close;
+  document.addEventListener('click',function(e){
+    var b=mm(); if(b&&b.contains(e.target)){document.body.classList.contains('mshow')?close():open();return}
+    var sh=document.getElementById('msheet'); if(!sh) return;
+    if(e.target===sh){close();return}
+    if(sh.contains(e.target)&&e.target.closest('button,a')&&!e.target.closest('.fsbtn')){setTimeout(close,80)}
+  },true);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close()});
+  var lm=document.getElementById('lmsg'),ml=document.getElementById('mlive');
+  if(lm&&ml&&window.MutationObserver){new MutationObserver(function(){ml.textContent=lm.textContent}).observe(lm,{childList:true,subtree:true,characterData:true})}
+})();
+</script>
 <div id="root"></div>
 <script>
 const DATA=/*__DATA__*/null;
@@ -351,5 +400,22 @@ function copyKakao(){
 }
 </script>
 <script type="text/plain" id="kakao">/*__KAKAO__*/</script>
+<script>
+(function(){
+ var KEY='argonFS';
+ function cur(){try{var v=+(localStorage.getItem(KEY)||2);return (v>=1&&v<=3)?v:2}catch(e){return 2}}
+ function apply(n){
+   var h=document.documentElement;
+   h.classList.remove('fs1','fs2','fs3');h.classList.add('fs'+n);
+   document.querySelectorAll('.fsbtn').forEach(function(x){x.classList.toggle('on',(+x.dataset.fs)===n)});
+   try{localStorage.setItem(KEY,n)}catch(e){}
+ }
+ apply(cur());
+ var b=document.getElementById('fopen')||document.getElementById('fbtn');
+ if(b)b.addEventListener('click',function(e){e.stopPropagation();apply(cur()%3+1)});
+ document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('.fsbtn');if(t)apply(+t.dataset.fs)},false);
+ window.__setFS=apply;
+})();
+</script>
 </body>
 </html>

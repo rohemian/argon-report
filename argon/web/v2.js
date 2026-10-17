@@ -9,15 +9,28 @@ function parts(p,ttl){return `<div class="parts"><div class="ttl">${ttl||'점수
 function histTxt(h,s){if(!h)return '';if(h.avg==null)return `<div class="hist">${h.label}<br>최근 1년 중 하위 <b>${h.pct}%</b></div>`;
   const diff=Math.round((h.now??s)-h.avg);return `<div class="hist">${h.label}<br>평균 <b>${h.avg}</b> · 범위 <b>${h.lo}~${h.hi}</b><br>평소보다 <b style="color:${diff<0?'var(--down)':'var(--up)'}">${diff>0?'+':''}${diff}점</b> · 하위 <b>${h.pct}%</b></div>`}
 function gaugeBox(score,label,h){const g=grade(score);return `<div class="gauge"><div class="lbl">${label}</div>${dial(score)}<div class="grade" style="color:${g[1]}">${g[0]}</div>${histTxt(h,score)}</div>`}
-function top3(score,label,p,dg,h){return `<div class="top3">${gaugeBox(score,label,h)}${parts(p)}${diag(dg)}</div>`}
-function scaleBar(score,h,what){const avg=h&&h.avg!=null?h.avg:null;const ref=h&&h.now!=null?h.now:score;const per=h&&h.n<250?h.n+'일':'1년';
-  const zones=[['방어 우선 0~39','z-b',40],['경계 40~54','z-w',15],['선별 55~69','z-n',15],['강세 70~100','z-g',30]];
-  let msg=`${what} ${score}점은 '${grade(score)[0]}'.`;
-  if(avg!=null) msg+= h.now!=null?` 같은 방식으로 환산한 오늘 ${ref}점 vs ${per} 평균 ${avg}점 → ${ref<avg-10?'평소보다 훨씬 나쁜 환경':ref<avg?'평소보다 조금 나쁜 환경':ref<avg+10?'평소보다 조금 좋은 환경':'평소보다 훨씬 좋은 환경'}.`:` ${per} 평균 ${avg}점${score<avg?'보다 낮아 평소보다 조심할 때.':'보다 높아 평소보다 우호적.'}`;
-  return `<div class="scale"><div class="lab">점수 읽는 법<small>${msg}</small></div><div class="sbar">
-   <div class="zones">${zones.map(([l,c,w])=>`<i class="${c}" style="${c==='z-n'?'background:#a16207':''}">${l}</i>`).join('')}</div>
-   ${avg!=null?`<div class="mk avg" style="left:${avg}%"><i></i><span>${per} 평균 ${avg}</span></div>`:''}
-   <div class="mk now" style="left:${score}%"><span>오늘 ${score}</span><i></i></div></div></div>`}
+/* --- v6: 점수 띠 (도넛 대신 가로 한 줄) --- */
+function sband(score,label,h,what){
+  const g=grade(score);
+  const zones=[['방어 우선','0~39','z-b'],['경계','40~54','z-w'],['선별 매수','55~69','z-n'],['강세','70~100','z-g']];
+  const avg=h&&h.avg!=null?h.avg:null, per=h&&h.n?(h.n<250?h.n+'일':'1년'):'1년';
+  const ref=h&&h.now!=null?h.now:score;
+  let msg=`${what||label} ${score}점은 '${g[0]}'`;
+  if(avg!=null) msg+=` · 같은 방식으로 환산한 오늘 ${ref}점 vs ${per} 평균 ${avg}점 → ${ref<avg-10?'평소보다 훨씬 나쁜 환경':ref<avg?'평소보다 조금 나쁜 환경':ref<avg+10?'평소보다 조금 좋은 환경':'평소보다 훨씬 좋은 환경'}`;
+  let stats='';
+  if(h){ if(h.avg!=null){const diff=Math.round(ref-h.avg);
+      stats=`${h.label||''}<br>평균 <b>${h.avg}</b> · 범위 <b>${h.lo}~${h.hi}</b><br>평소보다 <b style="color:${diff<0?'var(--down)':'var(--up)'}">${diff>0?'+':''}${diff}점</b> · 하위 <b>${h.pct}%</b>`}
+    else stats=`${h.label||''}<br>최근 1년 중 하위 <b>${h.pct}%</b>` }
+  return `<div class="sband${stats?'':' tw'}">
+   <div class="sl"><div class="lbl">${label}</div><div class="big"><b class="num" style="color:${g[1]}">${score}</b><i>/100</i></div><span class="gd" style="color:${g[1]}">${g[0]}</span></div>
+   <div class="sr"><div class="zbar">
+     <div class="zs">${zones.map(z=>`<i class="${z[2]}"><span>${z[0]}</span><em>${z[1]}</em></i>`).join('')}</div>
+     ${avg!=null?`<div class="mk avg" style="left:${avg}%"><i></i><span>${per} 평균 ${avg}</span></div>`:''}
+     <div class="mk now" style="left:${score}%"><span>오늘 ${score}</span><i></i></div></div>
+    <div class="zmsg">${msg}</div></div>
+   ${stats?`<div class="ss">${stats}</div>`:''}</div>`}
+function top3(score,label,p,dg,h){return sband(score,label,h,label)+`<div class="two even">${parts(p)}${diag(dg)}</div>`}
+function scaleBar(){return ''}  /* v6: sband가 대체 */
 function kpiR(k){return k.map(([n,v,c,key,hint])=>`<div class="kpi"><div class="k">${n}</div><div class="v">${v}</div><div class="s ${c==null?'':cls(c)}">${c==null?'':pct(c)}${hint?`<span class="hn">${hint}</span>`:''}</div>${key?ruler(key):''}</div>`).join('')}
 /* ---------- squarified treemap ---------- */
 function squarify(items,x,y,w,h){const total=items.reduce((a,b)=>a+b.v,0);if(!items.length||total<=0)return[];
@@ -31,7 +44,8 @@ function squarify(items,x,y,w,h){const total=items.reduce((a,b)=>a+b.v,0);if(!it
   if(row.length)lay(row,...rect);return out}
 function ccls(c,strong){return c>=strong?'c-su':c>0?'c-u':c===0?'c-f':c>-strong?'c-d':'c-sd'}
 function fitPct(c,w,ps){let s=pct(c);if(s.length*ps*0.62>w-6){s=(c>0?'+':'')+c.toFixed(1)+'%';}if(s.length*ps*0.62>w-4){s=(c>0?'+':'')+Math.round(c)+'%';}return s.length*ps*0.6>w-2?'':s}
-function tileHTML(r,chgKey,strong,showPx){const a=r.w*r.h,c=r[chgKey];let fs=Math.max(10,Math.min(26,Math.sqrt(a)/6.2));
+function pctBox(r,W,H){return `left:${(r.x/W*100).toFixed(4)}%;top:${(r.y/H*100).toFixed(4)}%;width:${(r.w/W*100).toFixed(4)}%;height:${(r.h/H*100).toFixed(4)}%`}
+function tileHTML(r,chgKey,strong,showPx,W,H){const a=r.w*r.h,c=r[chgKey];let fs=Math.max(10,Math.min(26,Math.sqrt(a)/6.2));
   const nm=r.name;if(nm.length*fs*0.95>r.w-8)fs=(r.w-8)/(nm.length*0.95);
   let inner='';const ps=Math.max(9,Math.min(15,Math.max(fs,10)*0.62));
   if(fs>=8.5&&r.h>=26){inner=`<div class="n" style="font-size:${fs}px">${nm}</div>`;
@@ -39,13 +53,16 @@ function tileHTML(r,chgKey,strong,showPx){const a=r.w*r.h,c=r[chgKey];let fs=Mat
     const pv=fitPct(c,r.w,ps);
     if(pv&&r.h>=fs*1.3+15)inner+=`<div class="p" style="font-size:${ps}px">${showPx&&r.w>=110&&r.h>=fs*1.3+40?fmt(r.p,r.mk)+' ':''}${pv}</div>`}
   else if(r.h>=16){const pv=fitPct(c,r.w,9);if(pv)inner=`<div class="p" style="font-size:9px">${pv}</div>`}
-  return `<div class="tl ${ccls(c,strong)}" data-code="${r.code}" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px" title="${nm} ${pct(c)}">${inner}</div>`}
+  const st=(W&&H)?pctBox(r,W,H):`left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px`;
+  return `<div class="tl ${ccls(c,strong)}" data-code="${r.code}" style="${st}" title="${nm} ${pct(c)}">${inner}</div>`}
 const TMW=784;
 const SC=k=>k==='cr'?(v=>Math.sqrt(v)):(v=>v);
-function tmTop(tm,h,id){const sq=id==='t-cr';const list=tm.top20.map(c=>tm.items.find(x=>x.code===c)).filter(Boolean).map(x=>({...x,v:sq?Math.sqrt(x.cap):x.cap}));
-  const rs=squarify(list,0,0,TMW,h);
-  return `<div class="tm" id="${id}" style="width:${TMW}px;height:${h}px">${rs.map(r=>tileHTML(r,'d1',2.5,true)).join('')}</div>
-  <div class="legend"><span>${sq?'박스 크기 = 시가총액의 제곱근(비트코인이 60%라 작은 코인도 보이게 압축)':'박스 크기 = 시가총액'} · 색 = 전일 대비</span><span><i style="background:#047857"></i>+2.5%↑</span><span><i style="background:#15803d"></i>상승</span><span><i style="background:#334155"></i>보합</span><span><i style="background:#c2410c"></i>하락</span><span><i style="background:#9a3412"></i>-2.5%↓</span></div>`}
+function tmTop(tm,h,id){const sq=id==='t-cr';const W=TMW;
+  const list=tm.top20.map(c=>tm.items.find(x=>x.code===c)).filter(Boolean).map(x=>({...x,v:sq?Math.sqrt(x.cap):x.cap}));
+  const rs=squarify(list,0,0,W,h);
+  return `<div class="tmblock"><div class="tm" id="${id}" style="width:100%;height:${h}px">${rs.map(r=>tileHTML(r,'d1',2.5,true,W,h)).join('')}</div>
+  <div class="heat top20grid">${list.map(x=>`<div class="tile ${tcls(x.d1)}"><div class="n">${x.name}</div><div class="c">${x.code}</div><div class="p">${pct(x.d1)}</div></div>`).join('')}</div>
+  <div class="legend"><span>${sq?'박스 크기 = 시가총액의 제곱근(비트코인이 60%라 작은 코인도 보이게 압축)':'박스 크기 = 시가총액'} · 색 = 전일 대비</span><span><i style="background:#047857"></i>+2.5%↑</span><span><i style="background:#15803d"></i>상승</span><span><i style="background:#334155"></i>보합</span><span><i style="background:#c2410c"></i>하락</span><span><i style="background:#9a3412"></i>-2.5%↓</span></div></div>`}
 function tmSec(tm,h,id,strong){const secs=[...tm.sectors].sort((a,b)=>b.cap-a.cap).map(s=>({...s,v:s.cap}));
   const srs=squarify(secs,0,0,TMW,h);let html='';
   srs.forEach(s=>{const kids=tm.items.filter(x=>x.sec===s.sec).sort((a,b)=>b.cap-a.cap).map(x=>({...x,v:x.cap}));
@@ -54,10 +71,24 @@ function tmSec(tm,h,id,strong){const secs=[...tm.sectors].sort((a,b)=>b.cap-a.ca
   return `<div class="tm" id="${id}" style="width:${TMW}px;height:${h}px">${html}</div>`}
 function secRank(tm,strong){const s=[...tm.sectors].sort((a,b)=>b.m1-a.m1);const mx=Math.max(...s.map(x=>Math.abs(x.m1)),1);
   return `<div class="rank-l"><div class="ttl">산업군 한 달 성적 — 시가총액 가중 평균 (큰 회사일수록 영향 큼)</div><div class="rkg">${s.map(x=>`<div class="rk"><span>${x.sec}</span><span class="v ${cls(x.m1)}">${pct(x.m1)}</span><div class="b"><i style="${x.m1>=0?'left:50%':'right:50%'};width:${Math.abs(x.m1)/mx*50}%;background:${x.m1>=0?'var(--up)':'var(--down)'}"></i></div></div>`).join('')}</div></div>`}
+function secTileHTML(r,cnt,strong){const area=Math.max(1,r.w*r.h);
+  let fs=Math.max(11,Math.min(30,Math.sqrt(area)/6.5));
+  if(r.sec.length*fs*0.95>r.w-14)fs=Math.max(10,(r.w-14)/Math.max(1,r.sec.length)/0.95);
+  const ps=Math.max(11,Math.min(21,fs*0.74));let inner='';
+  if(r.h>=20&&r.w>=30){inner=`<div class="n" style="font-size:${fs}px">${r.sec}</div>`;
+    if(r.h>=fs*1.4+16)inner+=`<div class="p" style="font-size:${ps}px">${pct(r.m1)}</div>`;
+    if(r.h>=fs*1.4+32&&r.w>=86)inner+=`<div class="c">${cnt}종목</div>`}
+  else inner=`<div class="p" style="font-size:10px">${pct(r.m1)}</div>`;
+  return `<div class="tl ${ccls(r.m1,strong)}" title="${r.sec} ${pct(r.m1)} · ${cnt}종목" style="${pctBox(r,TMW,260)}">${inner}</div>`}
+function secMap(tm,strong,h){h=h||260;const W=TMW;
+  const secs=[...tm.sectors].sort((a,b)=>b.cap-a.cap).map(s=>({...s,v:s.cap})).filter(s=>s.v>0);
+  const rs=squarify(secs,0,0,W,h);
+  return `<div class="tmblock"><div class="tm secmap" style="width:100%;height:${h}px">${rs.map(r=>secTileHTML(r,tm.items.filter(x=>x.sec===r.sec).length,strong)).join('')}</div></div>`}
 function secBlock(key,strong,h,note){const tm=DATA[key].tm;const s=[...tm.sectors].sort((a,b)=>b.m1-a.m1);
-  return `<h2>산업군 트렌드 맵<small>큰 박스 = 산업 · 작은 박스 = 종목 · 색 = 최근 한 달 등락</small></h2>
-  ${tmSec(tm,h,'s-'+key,strong)}${secRank(tm,strong)}
-  <div class="legend"><span>${key==='cr'?'박스 크기 = 시총 제곱근 · ':''}한 달 기준 진한 색 = ±${strong}% 이상</span><span><i style="background:#047857"></i>+${strong}%↑</span><span><i style="background:#15803d"></i>상승</span><span><i style="background:#c2410c"></i>하락</span><span><i style="background:#9a3412"></i>-${strong}%↓</span></div>
+  return `<h2>산업군 한 달 지도<small>박스 크기 = 산업 전체 시가총액 · 색 = 최근 한 달 등락 · <span style="color:var(--amber2)">개별 종목 없음</span></small></h2>
+  ${secMap(tm,strong,260)}
+  ${secRank(tm,strong)}
+  <div class="legend"><span>색 = 최근 한 달 등락 (진한 색 = ±${strong}% 이상)</span><span><i style="background:#047857"></i>+${strong}%↑</span><span><i style="background:#15803d"></i>상승</span><span><i style="background:#334155"></i>보합</span><span><i style="background:#c2410c"></i>하락</span><span><i style="background:#9a3412"></i>-${strong}%↓</span></div>
   <div class="insight"><b>한 달 흐름 읽기</b> · 가장 강한 곳 <b>${s[0].sec} ${pct(s[0].m1)}</b>, 가장 약한 곳 <b>${s[s.length-1].sec} ${pct(s[s.length-1].m1)}</b>. ${note}</div>`}
 /* 트리맵 폭이 236px 사이드바만큼 줄어드는 섹터 맵 */
 function tmSecW(){return TMW}
@@ -76,6 +107,27 @@ function curveSVG(c){const W=300,H=130,P=26;const all=[...c.now,...c.prev].map(x
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}"><path d="${path(c.prev)}" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="4 4"/>
    <path d="${path(c.now)}" fill="none" stroke="var(--amber)" stroke-width="3"/>
    ${c.now.map((p,i)=>`<circle cx="${X(i)}" cy="${Y(p[1])}" r="4" fill="var(--amber2)"/><text x="${X(i)}" y="${Y(p[1])-9}" fill="#ebe7df" font-size="11" font-family="IBM Plex Mono" font-weight="700" text-anchor="middle">${p[1].toFixed(2)}</text><text x="${X(i)}" y="${H-5}" fill="#8d96a5" font-size="10.5" text-anchor="middle">${p[0]}</text>`).join('')}</svg>`}
+/* --- v6: 금리 · 중앙은행 (곡선 그래프 → 만기별 막대 + 금리차) --- */
+function rateMid(s){const n=((s||'').match(/\d+(?:\.\d+)?/g)||[]).map(Number);if(!n.length)return null;return n.length>1?(n[0]+n[1])/2:n[0]}
+function rateBlock(m){const c=m.curve||{},now=c.now||[],prev=c.prev||[],W=m.cb||[];
+  if(!now.length)return '';
+  const vals=now.map(p=>p[1]),lo=Math.min(...vals)-0.4,hi=Math.max(...vals)+0.25,avg=vals.reduce((a,b)=>a+b,0)/vals.length;
+  const rows=now.map(([lab,v],i)=>{const pv=prev[i]?prev[i][1]:null;const bp=pv==null?null:Math.round((v-pv)*100);
+    const w=Math.max(8,Math.min(100,(v-lo)/(hi-lo||1)*100));const up=bp!=null&&bp>2,dn=bp!=null&&bp<-2;
+    const cls2=bp==null?'':(up?'rt-up':dn?'rt-dn':'fl');
+    const txt=bp==null?'비교 자료 없음':(up?`한 달 새 +${bp}bp · 금리 올라 부담↑`:dn?`한 달 새 ${bp}bp · 금리 내려 부담↓`:'한 달 새 거의 그대로');
+    return `<div class="rr"><span class="m">${lab}</span><span class="v">${v.toFixed(2)}%</span><div class="bar"><i style="width:${w}%"></i></div><span class="d ${cls2}">${txt}</span></div>`}).join('');
+  const sp=W.length>=2?(()=>{const a=rateMid(W[0][1]),b=rateMid(W[1][1]);return a!=null&&b!=null?a-b:null})():null;
+  return `<div class="callout" style="margin-top:10px"><b>한 줄 요약</b> · ${m.curvemsg||''}</div>
+  <div class="panel" style="margin-top:10px"><div class="ttl">미국 국채 금리 — 만기별 (막대 길이 = 금리 높낮이 · 평균 ${avg.toFixed(2)}%)</div>
+   <div class="ratelist">${rows}</div>
+   <p class="s">금리는 <b style="color:var(--down)">오르면 부담(주황)</b>, <b style="color:var(--up)">내리면 완화(초록)</b>으로 적었어요 — 주식 등락 색과 반대입니다. 만기마다 비교하는 이유는, 짧은 금리는 연준이, 긴 금리는 시장이 정하기 때문이에요.</p></div>
+  <div class="rate">
+   <div class="panel"><div class="ttl">중앙은행 체크</div><table class="cbT"><thead><tr><th>은행</th><th>기준금리</th><th>최근 결정</th><th>다음 회의</th></tr></thead><tbody>
+    ${W.map(([b,r,l,n,x])=>`<tr><td>${b}</td><td class="r">${r}</td><td>${l}</td><td>${n}<br><span style="color:var(--amber2);font:700 11px var(--mono)">${x}</span></td></tr>`).join('')}</tbody></table></div>
+   <div class="panel"><div class="ttl">미국 − 한국 금리차</div>
+    ${sp==null?'<p class="s">금리차를 계산할 자료가 없어요.</p>':`<div class="spread"><div class="k">기준금리 차이</div><div class="v">${sp>=0?'+':''}${sp.toFixed(2)}%p</div><div class="s">${sp>0?`미국이 한국보다 ${sp.toFixed(2)}%p 높아요. 보통은 <b>돈이 미국으로 쏠려 원화가 약해지는</b> 방향이에요. 그런데 지금은 원화가 오히려 강세 — 외국인이 한국 주식을 판 돈을 환전하지 않고 두는 등, 단순 공식이 깨진 상태라는 뜻이에요.`:`한국이 더 높아 원화 강세 요인. 다만 둘 다 높은 수준이라 대출·주식엔 여전히 부담입니다.`}</div></div>`}
+   </div></div>`}
 function card1(){const m=DATA.mac;const W=m.world;
  const ixRow=([n,q])=>`<div class="ix"><span class="nm">${n}</span><span class="d ${cls(q.d1)}">${pct(q.d1)}</span><span class="m ${q.m1>=0?'m-up':'m-dn'}">${pct(q.m1)}</span></div>`;
  return `<section class="card" id="card1"><div class="pad">

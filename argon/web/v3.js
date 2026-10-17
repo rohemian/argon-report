@@ -37,10 +37,7 @@ card1=function(){const m=DATA.mac;const W=m.world;
  <div class="world">${W.map(([r,L])=>`<div class="reg"><div class="t">${r}<small>전일 · 1개월</small></div>${L.map(ixRow).join('')}</div>`).join('')}</div>
  <div class="callout"><b>한 줄 해석</b> · ${m.worldmsg}</div>
  <h2>금리 · 중앙은행<small>돈의 가격이 모든 자산의 기준</small></h2>
- <div class="two"><div class="panel"><div class="ttl">미국 국채 금리 곡선 <span style="color:var(--amber2)">━ 오늘</span> <span style="color:#64748b">┅ 한 달 전</span></div>${curveSVG(m.curve)}<p class="s">${m.curvemsg}</p></div>
-  <div class="panel"><div class="ttl">중앙은행 체크</div><table class="cbT"><thead><tr><th>은행</th><th>기준금리</th><th>최근 결정</th><th>다음 회의</th></tr></thead><tbody>
-   ${m.cb.map(([b,r,l,n,x])=>`<tr><td>${b}</td><td class="r">${r}</td><td>${l}</td><td>${n}<br><span style="color:var(--amber2);font:700 11px var(--mono)">${x}</span></td></tr>`).join('')}</tbody></table>
-   <p class="s">금리 차이(미국 − 한국)가 클수록 돈이 미국으로 쏠리기 쉬워요. 회의 날짜가 다가올수록 시장은 결과를 미리 가격에 반영합니다.</p></div></div>
+ ${rateBlock(m)}
  <h2>원자재 · 환율<small>전일 · 한 달</small></h2>
  <div class="mini">${m.cmd.map(([n,q,u,dg])=>`<div><div class="k">${n}</div><div class="v">${u}${q.p.toLocaleString('en-US',{minimumFractionDigits:dg,maximumFractionDigits:dg})}</div><div class="s ${cls(q.d1)}">${pct(q.d1)} <span class="${cls(q.m1)}" style="opacity:.8">1M ${pct(q.m1)}</span></div></div>`).join('')}</div>
  <div class="mini five" style="margin-top:8px">${m.fx.map(([n,q,u,dg,hn])=>`<div><div class="k">${n}</div><div class="v">${q.p.toLocaleString('en-US',{minimumFractionDigits:dg,maximumFractionDigits:dg})}</div><div class="s ${cls(q.m1)}">1M ${pct(q.m1)}</div><div class="h">${hn}</div></div>`).join('')}</div>
@@ -61,7 +58,7 @@ card2=function(){const u=DATA.us;const s=[...u.tm.sectors];
  ${scaleBar(u.score,u.hist,'미국')}
  <div class="kpis six">${kpiR(u.kpis)}</div>
  <h2>시가총액 Top 20 자금 흐름<small>트리맵 · 미국 상장 기준</small></h2>
- ${tmTop(u.tm,430,'t-us')}
+ ${tmTop(u.tm,330,'t-us')}
  ${secBlock('us',5,400,`가장 강한 산업과 약한 산업의 한 달 격차는 ${(s[0].m1-s[s.length-1].m1).toFixed(1)}%p. 격차가 클수록 '어디에 있느냐'가 수익을 가릅니다.`)}
  <h2>퀀트 추천 Top 5${autoTag()}<small>5팩터 점수순 · 전부 지정가 · 손익비 1:2.5↑</small></h2>
  ${picks(u.top,'US',u.n)}
@@ -71,15 +68,12 @@ card2=function(){const u=DATA.us;const s=[...u.tm.sectors];
 card3=function(){const k=DATA.kr,g1=grade(k.score),g2=grade(k.score2);const s=[...k.tm.sectors];
  return `<section class="card" id="card3"><div class="pad">
  ${head(3,'KR Market Intelligence',k.title,k.sub)}
- <div class="top3"><div class="gauge dual"><div class="lbl">한국 시장 컨디션</div><div class="duo">
-   <div><div class="lbl">코스피</div>${dial(k.score,false)}<div class="grade" style="color:${g1[1]};font-size:11px">${g1[0]}</div></div>
-   <div><div class="lbl">코스닥</div>${dial(k.score2,false)}<div class="grade" style="color:${g2[1]};font-size:11px">${g2[0]}</div></div></div>
-   <div class="hist">코스피 추세 항목은<br>최근 1년 중 하위 <b style="color:${k.hist.pct<30?'var(--down)':'var(--up)'}">${k.hist.pct}%</b></div></div>
- ${parts(k.parts,'코스피 점수 산식')}${diag(k.diag)}</div>
- ${scaleBar(k.score,null,'코스피')}
+ ${sband(k.score,'코스피',k.hist,'코스피')}
+ ${sband(k.score2,'코스닥',null,'코스닥')}
+ <div class="two even">${parts(k.parts,'코스피 점수 산식')}${diag(k.diag)}</div>
  <div class="kpis">${kpiR(k.kpis)}</div>
  <h2>시가총액 Top 20 자금 흐름<small>트리맵 · 보통주 기준</small></h2>
- ${tmTop(k.tm,430,'t-kr')}
+ ${tmTop(k.tm,330,'t-kr')}
  ${secBlock('kr',8,420,`외국인(시총 상위 종목 합산)은 최근 5거래일 ${won(k.flow.f5)}원, 기관은 ${won(k.flow.i5)}원. 큰손이 산 산업과 판 산업을 트리맵 색으로 확인하세요.`)}
  <h2>퀀트 추천 Top 5${autoTag()}<small>5팩터 점수순 · 지정가 · 호가 단위 반영</small></h2>
  ${picks(k.top,'KR',k.n)}
@@ -97,7 +91,7 @@ card4=function(){const c=DATA.cr;
  <div class="chain">${c.onchain.slice(0,2).map(([k,v,s])=>`<div><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('')}
    <div style="grid-column:span 2"><div class="k">파생·온체인 해석</div><div class="s" style="font-size:12px;margin-top:4px">${c.chainmsg}</div></div></div>
  <h2>시가총액 Top 20 자금 흐름<small>트리맵 · 스테이블코인 제외 · 실시간</small></h2>
- ${tmTop(c.tm,400,'t-cr')}
+ ${tmTop(c.tm,300,'t-cr')}
  ${secBlock('cr',8,380,'비트코인이 시총의 대부분이라 결국 BTC 방향이 전체를 결정합니다. 산업군 색은 BTC와 다르게 움직이는 테마를 찾는 용도로 보세요.')}
  <h2>퀀트 추천 Top 5${autoTag()}<small>5팩터 점수순 · 지정가 · 손익비 1:2.5↑</small></h2>
  ${picks(c.top,'CR',c.n)}
