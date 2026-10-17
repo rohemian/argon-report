@@ -3,7 +3,7 @@
 매일 자동 실행용: 사람이 쓴 해설(config.notes)이 오늘 날짜에 없으면 데이터로 해설을 자동 생성한다.
 """
 import json, os, math, statistics, datetime as dt
-from quant import ind, plan, rnd, score_universe, pick_top, build_pick, fmt, won, depth_for
+from quant import ind, plan, rnd, score_universe, pick_top, build_pick, explain, fmt, won, depth_for
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -149,12 +149,34 @@ for c in R["cg"]:
                      turn=c["vol"] / c["cap"] * 100 if c["cap"] else None, fund=HL.get(c["sym"], {}).get("f"), mk="CR"))
 
 BEN = dict(US=spx, KR=ks, CR=btcI)
-picks = {}
+picks, ALL = {}, {}
 for mk, U in (("US", us_u), ("KR", kr_u), ("CR", cr_u)):
     ranked = score_universe(U, BEN[mk], mk)
+    ALL[mk] = ranked
     top = pick_top(ranked, 5, 2)
     picks[mk] = [build_pick(u, mk, BEN[mk], len(U), i + 1) for i, u in enumerate(top)]
     print(mk, len(U), [(p["name"], p["score"], p["f"]) for p in picks[mk]])
+
+# ---------------- 종목 퀀트 점수 조회기 (부모님·가족용) ----------------
+ALIAS = CFG.get("alias", {})
+def search_item(u, mk, rank, nuni, alias_extra=""):
+    x = u["x"]; pl = plan(x, mk, depth_for(x))
+    why, risks, head = explain(u, mk, BEN[mk], nuni)
+    al = " ".join([ALIAS.get(u["code"], ""), alias_extra or ""]).strip()
+    return dict(n=u["name"], c=u["code"], mk=mk, sec=u["sec"], sc=u["score"], f=u["f"], r=rank, nu=nuni,
+                p=x["p"], d1=round(x["d1"], 2), m1=round(x["m1"], 2), rsi=round(x["rsi"]),
+                e=pl["entry"], s=pl["sl"], t1=pl["tp1"], t2=pl["tp2"], rr=pl["rr"],
+                hd=head, why=[[w["k"], w["p"], w["t"]] for w in why[:3]], rk=risks[:2], al=al)
+EN_NAME = {q["sym"]: (q.get("name") or "") for q in R["us"]}
+CG_NAME = {c["sym"]: c["name"] for c in R["cg"]}
+SEARCH = []
+for mk, U in (("US", ALL["US"]), ("KR", ALL["KR"]), ("CR", ALL["CR"])):
+    for i, u in enumerate(U):
+        extra = EN_NAME.get(u["code"], "") if mk == "US" else (CG_NAME.get(u["code"], "") if mk == "CR" else "")
+        if u["sec"] == "기타" and mk == "CR":
+            continue
+        SEARCH.append(search_item(u, mk, i + 1, len(U), extra))
+SEARCH.sort(key=lambda z: ({"KR": 0, "US": 1, "CR": 2}[z["mk"]], -z["sc"]))
 
 # ---------------- 트리맵 (시총 Top20 + 산업군) ----------------
 def tm_items(U, mk):
@@ -408,6 +430,12 @@ open(os.path.join(OUT, "index.html"), "w", encoding="utf-8").write(tpl.replace("
 for n in range(1, 6):
     open(os.path.join(OUT, f"card{n}.html"), "w", encoding="utf-8").write(tpl.replace("/*__DATA__*/null", J).replace("/*__ONLY__*/0", str(n)).replace("/*__LIVE__*/true", "false"))
 open(os.path.join(OUT, "kakao.txt"), "w", encoding="utf-8").write(KAKAO)
+chk = open(os.path.join(W, "check_template.html"), encoding="utf-8").read()
+SJ = json.dumps(SEARCH, ensure_ascii=False, default=float)
+open(os.path.join(OUT, "check.html"), "w", encoding="utf-8").write(
+    chk.replace("/*__SEARCH__*/null", SJ).replace("/*__UPDATED__*/\"\"", json.dumps(ATS, ensure_ascii=False))
+       .replace("/*__DATE__*/\"\"", json.dumps(DATA["meta"]["date"], ensure_ascii=False)))
 json.dump(DATA, open(os.path.join(OUT, "data.json"), "w", encoding="utf-8"), ensure_ascii=False, default=float)
 open(os.path.join(OUT, ".nojekyll"), "w").write("")
+print("search", len(SEARCH), "items")
 print("built", S, "equity", round(EQ), "committed", round(COM), "auto" if not NOTE else "notes")

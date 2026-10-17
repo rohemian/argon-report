@@ -58,7 +58,7 @@ def yahoo_screener(n=150):
 # ---------------- Naver (한국) ----------------
 def naver_caps():
     out = []
-    for mk, size in (("KOSPI", 70), ("KOSDAQ", 25)):
+    for mk, size in (("KOSPI", 100), ("KOSDAQ", 35)):
         d = req(f"https://m.stock.naver.com/api/stocks/marketValue/{mk}?page=1&pageSize={size}") or {}
         for x in d.get("stocks", []):
             if x.get("stockEndType") != "stock":
