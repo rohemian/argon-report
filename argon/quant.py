@@ -51,10 +51,18 @@ def plan(x, mk, depth=0.6):
     tp1 = entry + max(2.5 * risk, min(x["m20"] - entry, 3.5 * risk))
     tp2 = entry + max(4.2 * risk, (tp1 - entry) * 1.6)
     e, s, t1, t2 = [rnd(v, mk) for v in (entry, sl, tp1, tp2)]
-    rr = (t1 - e) / (e - s)
+    risk = e - s
+    if risk <= 0:  # 호가 단위 반올림으로 진입가와 손절가가 붙는 경우(초저가·ETN 등) 보정
+        s = rnd(e - max(x["atr"] * 0.5, e * 0.01), mk); risk = e - s
+    if risk <= 0:
+        risk = max(e * 0.01, 1e-9); s = rnd(e - risk, mk); risk = e - s
+    if t1 <= e: t1 = rnd(e + 2.5 * risk, mk)
+    if t2 <= t1: t2 = rnd(e + 4.2 * risk, mk)
+    rr = (t1 - e) / risk
     if rr < 2.5:
-        t1 = rnd(e + 2.5 * (e - s) * 1.01, mk); rr = (t1 - e) / (e - s)
-    return dict(entry=e, sl=s, tp1=t1, tp2=t2, rr=round(rr, 1), rr2=round((t2 - e) / (e - s), 1))
+        t1 = rnd(e + 2.5 * risk * 1.01, mk); rr = (t1 - e) / risk
+    rr2 = (t2 - e) / risk
+    return dict(entry=e, sl=s, tp1=t1, tp2=t2, rr=min(round(rr, 1), 12.0), rr2=min(round(rr2, 1), 20.0))
 
 
 def depth_for(x):
@@ -103,12 +111,14 @@ def score_universe(U, bench, mk):
     return sorted(U, key=lambda z: -z["score"])
 
 
-def pick_top(U, n=5, max_per_sec=2):
+def pick_top(U, n=5, max_per_sec=2, cap_min=0.0, no_etf=True):
     out, cnt = [], {}
     for u in U:
         x = u["x"]
-        if x["m1"] < -30 or x["n"] < 120:  # 한 달 -30% 이상 폭락주는 '떨어지는 칼날'로 제외
+        if x["m1"] < -30 or x["n"] < 90:  # 한 달 -30% 이상 폭락주는 '떨어지는 칼날'로 제외
             continue
+        if cap_min and u.get("cap", 0) < cap_min: continue
+        if no_etf and u.get("kind") == "E": continue
         if cnt.get(u["sec"], 0) >= max_per_sec: continue
         cnt[u["sec"]] = cnt.get(u["sec"], 0) + 1
         out.append(u)

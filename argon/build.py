@@ -3,7 +3,7 @@
 매일 자동 실행용: 사람이 쓴 해설(config.notes)이 오늘 날짜에 없으면 데이터로 해설을 자동 생성한다.
 """
 import json, os, math, statistics, datetime as dt
-from quant import ind, plan, rnd, score_universe, pick_top, build_pick, explain, fmt, won, depth_for
+from quant import ind, plan, rnd, score_universe, pick_top, build_pick, explain, rating_num, fmt, won, depth_for
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -64,7 +64,7 @@ def flow_sum(days, who="fi", codes=None):
         for f in (v.get("flows") or [])[:days]:
             s += (f["f"] if "f" in who else 0) + (f["i"] if "i" in who else 0)
     return s
-kospi_codes = {x["code"] for x in R["kr"] if x["mk"] == "KOSPI"}; kosdaq_codes = {x["code"] for x in R["kr"] if x["mk"] == "KOSDAQ"}
+kospi_codes = {x["code"] for x in R["kr"] if x.get("mkt") == "KOSPI"}; kosdaq_codes = {x["code"] for x in R["kr"] if x.get("mkt") == "KOSDAQ"}
 fr5 = flow_sum(5, "f", kospi_codes); fr1 = flow_sum(1, "f", kospi_codes); in5 = flow_sum(5, "i", kospi_codes)
 kq5 = flow_sum(5, "fi", kosdaq_codes)
 
@@ -121,62 +121,71 @@ kdv = devser("^KS11"); ktr = [clamp(20 + kdv[x] * 1.5, 0, 40) for x in sorted(kd
 NM = CFG["names"]; SEC = CFG["sectors"]
 def sec_of(m, code): return next((s for s, v in m.items() if code in v.split()), None)
 SKIP_US = {"SKHY", "HSBC", "TM", "SAP", "NVO", "AZN", "SHEL", "BABA", "SONY", "RY", "TD", "HDB", "UL", "BHP", "TTE", "SAN"}
+ETF_KR={"QQQ":"나스닥100 ETF","SPY":"S&P500 ETF","VOO":"S&P500 ETF(뱅가드)","IVV":"S&P500 ETF(블랙록)","VTI":"미국 전체시장 ETF","SCHD":"미국 배당주 ETF","SOXX":"미국 반도체 ETF","SMH":"반도체 ETF(VanEck)","ARKK":"혁신기술 ETF(ARK)","TQQQ":"나스닥 3배 레버리지","SQQQ":"나스닥 3배 인버스","GLD":"금 ETF","SLV":"은 ETF","USO":"원유 ETF","IWM":"러셀2000 ETF","DIA":"다우 ETF","TLT":"미국 장기국채 ETF","HYG":"미국 하이일드 채권 ETF","EEM":"신흥국 ETF","VNQ":"미국 리츠 ETF","IBIT":"비트코인 현물 ETF(블랙록)","FBTC":"비트코인 현물 ETF(피델리티)","EWY":"한국 ETF(미국 상장)","EWJ":"일본 ETF","FXI":"중국 대형주 ETF","KWEB":"중국 인터넷 ETF","MAGS":"빅테크7 ETF","SOXL":"반도체 3배 레버리지","JEPI":"커버드콜 ETF","VIG":"배당성장 ETF","VYM":"고배당 ETF","RSP":"S&P500 동일가중 ETF","IJH":"미국 중형주 ETF","IWF":"러셀1000 성장 ETF","XLK":"기술 섹터 ETF","XLV":"헬스케어 섹터 ETF","XLF":"금융 섹터 ETF","XLE":"에너지 섹터 ETF","XLP":"필수소비 섹터 ETF","XLI":"산업재 섹터 ETF","XLY":"경기소비 섹터 ETF","XLU":"유틸리티 섹터 ETF","XLC":"커뮤니케이션 섹터 ETF","XLB":"소재 섹터 ETF","XLRE":"부동산 섹터 ETF"}
 us_u = []
 for q in R["us"]:
-    s = q["sym"]; rr = (R["hus"].get(s) or {}).get("rows")
-    if s in SKIP_US or not rr or len(rr) < 120: continue
-    x = ind(rr); g = None
+    s_ = q["sym"]; rr = (R["hus"].get(s_) or {}).get("rows")
+    if not rr or len(rr) < 90: continue
+    etf = q.get("kind") == "etf"; x = ind(rr); g = None
     if q.get("epsf") and q.get("epst") and q["epst"] > 0: g = (q["epsf"] / q["epst"] - 1) * 100
     ed = None
     if q.get("earn"):
         ed = (_utc(q["earn"]) + dt.timedelta(hours=9)).date(); ed = (ed - TODAY).days
-    us_u.append(dict(code=s, name=NM["us"].get(s, (q["name"] or s).split(" ")[0]), sec=sec_of(SEC["us"], s) or "기타", cap=q["cap"], x=x,
-                     fpe=q.get("fpe"), g=g, rating=q.get("rating"), earn_days=ed, mk="US"))
+    sec = "ETF·레버리지" if etf else (sec_of(SEC["us"], s_) or "기타")
+    us_u.append(dict(code=s_, name=NM["us"].get(s_, ETF_KR.get(s_) or (q["name"] or s_).split(" ")[0]), sec=sec, cap=q["cap"], x=x,
+                     fpe=None if etf else q.get("fpe"), g=g, rating=None if etf else q.get("rating"), earn_days=ed, mk="US",
+                     kind="E" if etf else "S"))
 kr_u = []
 for k in R["kr"]:
     c = k["code"]; rr = (R["hkr"].get(c) or {}).get("rows")
-    if not rr or len(rr) < 120 or k["name"].endswith(("우", "우B", "우C")) or not c.endswith("0"): continue
+    if not rr or len(rr) < 90: continue
+    etf_k = k.get("kind", "stock") != "stock"
+    if not etf_k and k["name"].endswith(("우", "우B", "우C", "우C2")): continue
     det = KDET.get(c, {}); x = ind(rr)
     fl = sum(f["f"] + f["i"] for f in (det.get("flows") or [])[:20]) if det.get("flows") else None
     g = (det["per"] / det["cper"] - 1) * 100 if det.get("per") and det.get("cper") and det["cper"] > 0 else None
-    kr_u.append(dict(code=c, name=NM["kr_short"].get(k["name"], k["name"]), sec=sec_of(SEC["kr"], c) or "기타", cap=k["cap"], x=x,
-                     per=det.get("per"), cper=det.get("cper"), g=g, flow_won=fl, flow_pct=None if fl is None else fl / k["cap"] * 100, mk="KR", mkt=k["mk"]))
+    kr_u.append(dict(code=c, name=NM["kr_short"].get(k["name"], k["name"]), sec="ETF·ETN" if etf_k else (sec_of(SEC["kr"], c) or "기타"), cap=k["cap"], x=x,
+                     per=None if etf_k else det.get("per"), cper=None if etf_k else det.get("cper"), g=None if etf_k else g,
+                     flow_won=None if etf_k else fl, flow_pct=None if (etf_k or fl is None) else fl / max(k["cap"], 1) * 100, mk="KR", mkt=k.get("mkt", "KOSPI"), kind="E" if etf_k else "S"))
 cr_u = []
-for c in R["cg"]:
-    rr = R["hcr"].get(c["sym"])
-    if not rr or len(rr) < 120 or (c["vol"] or 0) <= 0: continue
-    cr_u.append(dict(code=c["sym"], name=NM["cr"].get(c["sym"], c["name"]), sec=sec_of(SEC["cr"], c["sym"]) or "기타", cap=c["cap"], x=ind(rr), id=c["id"],
-                     turn=c["vol"] / c["cap"] * 100 if c["cap"] else None, fund=HL.get(c["sym"], {}).get("f"), mk="CR"))
-
+for c_ in R["cg"]:
+    rr = R["hcr"].get(c_["sym"])
+    if not rr or len(rr) < 90 or (c_["vol"] or 0) <= 0: continue
+    cr_u.append(dict(code=c_["sym"], name=NM["cr"].get(c_["sym"], c_["name"]), sec=sec_of(SEC["cr"], c_["sym"]) or "기타", cap=c_["cap"], x=ind(rr), id=c_["id"],
+                     turn=c_["vol"] / c_["cap"] * 100 if c_["cap"] else None, fund=HL.get(c_["sym"], {}).get("f"), mk="CR", kind="S"))
 BEN = dict(US=spx, KR=ks, CR=btcI)
+FLOOR = {"KR": 1e12, "US": 3e10, "CR": 1e9}
 picks, ALL = {}, {}
 for mk, U in (("US", us_u), ("KR", kr_u), ("CR", cr_u)):
     ranked = score_universe(U, BEN[mk], mk)
     ALL[mk] = ranked
-    top = pick_top(ranked, 5, 2)
-    picks[mk] = [build_pick(u, mk, BEN[mk], len(U), i + 1) for i, u in enumerate(top)]
-    print(mk, len(U), [(p["name"], p["score"], p["f"]) for p in picks[mk]])
-
+    pool = [u for u in ranked if u["cap"] >= FLOOR[mk] and u.get("kind") != "E"]
+    if len(pool) < 12: pool = ranked
+    picks[mk] = [build_pick(u, mk, BEN[mk], len(ranked), i + 1) for i, u in enumerate(pick_top(pool, 5, 2))]
+    print(mk, "universe", len(ranked), "pool", len(pool), [(p["name"], p["score"]) for p in picks[mk]])
 # ---------------- 종목 퀀트 점수 조회기 (부모님·가족용) ----------------
 ALIAS = CFG.get("alias", {})
-def search_item(u, mk, rank, nuni, alias_extra=""):
-    x = u["x"]; pl = plan(x, mk, depth_for(x))
-    why, risks, head = explain(u, mk, BEN[mk], nuni)
-    al = " ".join([ALIAS.get(u["code"], ""), alias_extra or ""]).strip()
-    return dict(n=u["name"], c=u["code"], mk=mk, sec=u["sec"], sc=u["score"], f=u["f"], r=rank, nu=nuni,
-                p=x["p"], d1=round(x["d1"], 2), m1=round(x["m1"], 2), rsi=round(x["rsi"]),
-                e=pl["entry"], s=pl["sl"], t1=pl["tp1"], t2=pl["tp2"], rr=pl["rr"],
-                hd=head, why=[[w["k"], w["p"], w["t"]] for w in why[:3]], rk=risks[:2], al=al)
 EN_NAME = {q["sym"]: (q.get("name") or "") for q in R["us"]}
-CG_NAME = {c["sym"]: c["name"] for c in R["cg"]}
+CG_NAME = {c_["sym"]: c_["name"] for c_ in R["cg"]}
+SECS = sorted({u["sec"] for mk in ALL for u in ALL[mk]}); SI = {x: i for i, x in enumerate(SECS)}
+MKC = {"KR": "K", "US": "U", "CR": "C"}
 SEARCH = []
-for mk, U in (("US", ALL["US"]), ("KR", ALL["KR"]), ("CR", ALL["CR"])):
-    for i, u in enumerate(U):
-        extra = EN_NAME.get(u["code"], "") if mk == "US" else (CG_NAME.get(u["code"], "") if mk == "CR" else "")
-        if u["sec"] == "기타" and mk == "CR":
-            continue
-        SEARCH.append(search_item(u, mk, i + 1, len(U), extra))
-SEARCH.sort(key=lambda z: ({"KR": 0, "US": 1, "CR": 2}[z["mk"]], -z["sc"]))
+for mk in ("KR", "US", "CR"):
+    U = ALL[mk]
+    for i_, u in enumerate(U):
+        x = u["x"]; pl = plan(x, mk, depth_for(x)); etf = u.get("kind") == "E"
+        if mk == "CR": v1 = round(u.get("turn") or 0, 2); v2 = 0; fv = round(u["fund"], 4) if u.get("fund") is not None else 0
+        elif mk == "US": v1 = round(u.get("fpe") or 0, 1); v2 = round(u.get("g") or 0); fv = round(rating_num(u.get("rating")) or 0, 1)
+        else: v1 = round(u.get("cper") or u.get("per") or 0, 1); v2 = round(u.get("g") or 0); fv = round(u.get("flow_pct") or 0, 2)
+        al = " ".join(z for z in (ALIAS.get(u["code"], ""), (EN_NAME.get(u["code"], "") if mk == "US" else CG_NAME.get(u["code"], "") if mk == "CR" else "")) if z).strip()
+        SEARCH.append([u["name"], u["code"], MKC[mk], u.get("kind", "S"), SI[u["sec"]], u["score"], i_ + 1, len(U),
+                       round(x["p"], 4), round(x["d1"], 2), round(x["m1"], 1), round(x["rsi"]),
+                       pl["entry"], pl["sl"], pl["tp1"], pl["tp2"], pl["rr"],
+                       [u["f"][k] for k in ("trend", "mom", "val", "flow", "vol")],
+                       [round((x["p"] / x["ma200"] - 1) * 100, 1), round(x["m6x"], 1), round(x["m3"] - BEN[mk]["m3"], 1), v1, v2, fv,
+                        round(x["atr"] / x["p"] * 100, 1), round(x["vol20"], 1)], al])
+print("search rows", len(SEARCH))
+
 
 # ---------------- 트리맵 (시총 Top20 + 산업군) ----------------
 def tm_items(U, mk):
@@ -189,6 +198,7 @@ def tm_items(U, mk):
 def secsum(items):
     o = {}
     for x in items:
+        if not x.get("cap"): continue
         a = o.setdefault(x["sec"], dict(sec=x["sec"], cap=0, w1=0, wd=0, n=0)); a["cap"] += x["cap"]; a["w1"] += x["cap"] * x["m1"]; a["wd"] += x["cap"] * x["d1"]; a["n"] += 1
     return sorted([dict(sec=a["sec"], cap=a["cap"], m1=round(a["w1"] / a["cap"], 2), d1=round(a["wd"] / a["cap"], 2), n=a["n"]) for a in o.values()], key=lambda z: -z["m1"])
 TM = {}
@@ -430,12 +440,10 @@ open(os.path.join(OUT, "index.html"), "w", encoding="utf-8").write(tpl.replace("
 for n in range(1, 6):
     open(os.path.join(OUT, f"card{n}.html"), "w", encoding="utf-8").write(tpl.replace("/*__DATA__*/null", J).replace("/*__ONLY__*/0", str(n)).replace("/*__LIVE__*/true", "false"))
 open(os.path.join(OUT, "kakao.txt"), "w", encoding="utf-8").write(KAKAO)
-chk = open(os.path.join(W, "check_template.html"), encoding="utf-8").read()
-SJ = json.dumps(SEARCH, ensure_ascii=False, default=float)
-open(os.path.join(OUT, "check.html"), "w", encoding="utf-8").write(
-    chk.replace("/*__SEARCH__*/null", SJ).replace("/*__UPDATED__*/\"\"", json.dumps(ATS, ensure_ascii=False))
-       .replace("/*__DATE__*/\"\"", json.dumps(DATA["meta"]["date"], ensure_ascii=False)))
+open(os.path.join(OUT, "check.html"), "w", encoding="utf-8").write(open(os.path.join(W, "check_template.html"), encoding="utf-8").read())
+json.dump(dict(u=ATS, d=DATA["meta"]["date"], sec=SECS, n=dict(KR=len(ALL["KR"]), US=len(ALL["US"]), CR=len(ALL["CR"])), rows=SEARCH),
+          open(os.path.join(OUT, "search.json"), "w", encoding="utf-8"), ensure_ascii=False, default=float, separators=(",", ":"))
+print("search.json", round(os.path.getsize(os.path.join(OUT, "search.json")) / 1024), "KB")
 json.dump(DATA, open(os.path.join(OUT, "data.json"), "w", encoding="utf-8"), ensure_ascii=False, default=float)
 open(os.path.join(OUT, ".nojekyll"), "w").write("")
-print("search", len(SEARCH), "items")
 print("built", S, "equity", round(EQ), "committed", round(COM), "auto" if not NOTE else "notes")
