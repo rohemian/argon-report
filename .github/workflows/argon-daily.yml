@@ -1,0 +1,50 @@
+name: Argon 데일리 자동 갱신
+
+on:
+  schedule:
+    - cron: "0 22 * * *"   # 한국시간 매일 07:00
+    - cron: "0 10 * * *"   # 한국시간 매일 19:00
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: argon-daily
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 1) 데이터 수집
+        run: python argon/fetch.py
+      - name: 2) 점수·추천·가상계좌·페이지 생성
+        run: python argon/build.py
+      - name: 3) 가상계좌 원장 저장
+        run: |
+          git config user.name  "argon-bot"
+          git config user.email "argon-bot@users.noreply.github.com"
+          git add state/ledger.json
+          git commit -m "ledger: $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M') KST" || echo "변경 없음"
+          git push
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
