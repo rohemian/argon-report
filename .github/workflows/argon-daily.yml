@@ -2,8 +2,8 @@ name: Argon 데일리 자동 갱신
 
 on:
   schedule:
-    - cron: "0 22 * * *"   # 한국시간 매일 07:00
-    - cron: "0 10 * * *"   # 한국시간 매일 19:00
+    - cron: "0 22 * * *"
+    - cron: "0 10 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -29,12 +29,13 @@ jobs:
       - name: 2) 점수·추천·가상계좌·페이지 생성
         run: python argon/build.py
       - name: 3) 가상계좌 원장 저장
+        continue-on-error: true
         run: |
           git config user.name  "argon-bot"
           git config user.email "argon-bot@users.noreply.github.com"
           git add state/ledger.json
           git commit -m "ledger: $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M') KST" || echo "변경 없음"
-          git push
+          git push || echo "원장 저장 건너뜀"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
