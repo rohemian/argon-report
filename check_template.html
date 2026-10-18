@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="ko" class="fs2">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#06080F" />
+  <title>ARGON AI — 전 종목 퀀트 점수 &amp; 타점 스캐너</title>
+
+  <!-- Pretendard: 구글폰트에는 없습니다(400 오류). 공식 CDN을 씁니다. -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-main: #06080F;
+      --bg-card: #0D121F;
+      --bg-elev: #141C2E;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(56, 189, 248, 0.4);
+      --text: #F8FAFC;
+      --text-sub: #94A3B8;
+      --cyan: #38BDF8;
+      --indigo: #6366F1;
+      --green: #10B981;
+      --red: #F43F5E;
+      --amber: #F59E0B;
+      --font-sans: 'Pretendard Variable', 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+      --fsc: 1.25;
+    }
+    html.fs1 { --fsc: 1.00; }
+    html.fs2 { --fsc: 1.25; }
+    html.fs3 { --fsc: 1.50; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-main); color: var(--text);
+      font-family: var(--font-sans); line-height: 1.5;
+      padding-bottom: calc(60px + env(safe-area-inset-bottom));
+      -webkit-text-size-adjust: 100%;
+    }
+
+    /* ---------- 상단 ---------- */
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(13, 18, 31, 0.94); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+    }
+    .header-inner { max-width: 840px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .hd-title { font-weight: 800; font-size: calc(16px * var(--fsc)); min-width: 0; }
+    .hd-meta { font-size: calc(11.5px * var(--fsc)); color: var(--text-sub); margin-top: 2px; line-height: 1.45; }
+    .hd-actions { display: flex; align-items: center; gap: 7px; flex: 0 0 auto; }
+    .fs-btn {
+      background: var(--bg-elev); border: 1px solid var(--border); color: var(--cyan);
+      min-width: 48px; min-height: 46px; padding: 0 12px; border-radius: 11px;
+      font-family: var(--font-sans); font-size: calc(17px * var(--fsc)); font-weight: 800; cursor: pointer;
+    }
+    .fs-btn:active { background: rgba(56, 189, 248, 0.16); }
+    .back-btn {
+      background: var(--bg-elev); border: 1px solid var(--border);
+      color: var(--text); text-decoration: none;
+      padding: 11px 13px; border-radius: 11px;
+      font-size: calc(13px * var(--fsc)); font-weight: 700; white-space: nowrap;
+    }
+    .back-btn:active { border-color: var(--border-accent); }
+    .container { max-width: 840px; margin: 0 auto; padding: 16px; }
+
+    /* ---------- 검색 ---------- */
+    .search-wrap { position: relative; margin-bottom: 12px; }
+    .search-input {
+      width: 100%; padding: 15px 46px 15px 44px;
+      background: var(--bg-card); border: 1.5px solid var(--border-accent);
+      border-radius: 16px; color: var(--text);
+      font-family: var(--font-sans); font-size: calc(16px * var(--fsc)); font-weight: 600; outline: none;
+      box-shadow: 0 8px 24px rgba(56, 189, 248, 0.12);
+    }
+    .search-input::placeholder { color: var(--text-sub); font-weight: 500; }
+    .search-input:focus { border-color: var(--cyan); }
+    .search-ico { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: calc(17px * var(--fsc)); pointer-events: none; }
+    .search-clear {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      background: transparent; border: 0; color: var(--text-sub); cursor: pointer;
+      font-size: calc(16px * var(--fsc)); padding: 12px; border-radius: 10px; display: none;
+    }
+    .search-wrap.filled .search-clear { display: block; }
+
+    /* ---------- 칩 ---------- */
+    .filter-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 6px; -webkit-overflow-scrolling: touch; }
+    .filter-row::-webkit-scrollbar { display: none; }
+    .chip {
+      background: var(--bg-card); border: 1px solid var(--border);
+      color: var(--text-sub); padding: 9px 13px; border-radius: 999px;
+      font-family: var(--font-sans); font-size: calc(12.5px * var(--fsc)); font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+    }
+    .chip.active { background: rgba(56, 189, 248, 0.16); border-color: var(--cyan); color: var(--cyan); }
+    .chip.fav.active { background: rgba(245, 158, 11, 0.16); border-color: var(--amber); color: var(--amber); }
+
+    /* ---------- 정렬 · 결과 수 ---------- */
+    .bar-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 12px; flex-wrap: wrap; }
+    .count-txt { font-size: calc(12.5px * var(--fsc)); color: var(--text-sub); }
+    .count-txt b { color: var(--text); font-family: var(--font-mono); }
+    .sorts { display: flex; gap: 6px; }
+    .sort-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--text-sub);
+      font-family: var(--font-sans); font-size: calc(11.5px * var(--fsc)); font-weight: 700;
+      padding: 7px 10px; border-radius: 9px; cursor: pointer;
+    }
+    .sort-btn.active { color: var(--cyan); border-color: var(--cyan); background: rgba(56, 189, 248, 0.12); }
+
+    /* ---------- 관심종목 구역 ---------- */
+    .sec-head {
+      display: flex; align-items: center; gap: 8px;
+      margin: 2px 0 10px; font-size: calc(13px * var(--fsc)); font-weight: 800;
+    }
+    .sec-head .ln { flex: 1; height: 1px; background: var(--border); }
+    .sec-head .cnt { color: var(--text-sub); font-family: var(--font-mono); font-weight: 700; }
+    .fav-head { color: var(--amber); }
+    .hint-empty {
+      background: var(--bg-card); border: 1px dashed var(--border); border-radius: 14px;
+      padding: 14px 16px; font-size: calc(12.5px * var(--fsc)); line-height: 1.65; color: var(--text-sub);
+    }
+    .hint-empty b { color: var(--amber); }
+
+    /* ---------- 종목 카드 ---------- */
+    .item-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 18px; padding: 16px; margin-bottom: 12px;
+    }
+    .item-card.pinned { border-color: rgba(245, 158, 11, 0.42); }
+    .item-card.open { border-color: var(--border-accent); }
+    .tappable { cursor: pointer; }
+    .item-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+    .item-head .left { min-width: 0; }
+    .item-head .right { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+    .nm-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .mk-badge {
+      font-family: var(--font-mono); font-size: calc(11px * var(--fsc)); font-weight: 800;
+      padding: 3px 8px; border-radius: 6px; background: var(--bg-elev); color: var(--cyan); white-space: nowrap;
+    }
+    .nm-strong { font-size: calc(17px * var(--fsc)); line-height: 1.3; }
+    .sec-txt { font-size: calc(11.5px * var(--fsc)); color: var(--cyan); }
+    .etf-tag {
+      font-size: calc(10.5px * var(--fsc)); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.35);
+      background: rgba(245, 158, 11, 0.1); border-radius: 6px; padding: 2px 7px; white-space: nowrap;
+    }
+    .meta-line { font-size: calc(12.5px * var(--fsc)); color: var(--text-sub); margin-top: 5px; font-family: var(--font-mono); line-height: 1.5; }
+    .score-pill {
+      font-family: var(--font-mono); font-size: calc(13px * var(--fsc)); font-weight: 800;
+      padding: 6px 11px; border-radius: 9px; white-space: nowrap; flex: 0 0 auto;
+    }
+    .score-pill.buy  { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.35); }
+    .score-pill.hold { background: rgba(56, 189, 248, 0.15); color: var(--cyan);  border: 1px solid rgba(56, 189, 248, 0.35); }
+    .score-pill.warn { background: rgba(245, 158, 11, 0.15); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.35); }
+    .score-pill.sell { background: rgba(244, 63, 94, 0.15);  color: var(--red);   border: 1px solid rgba(244, 63, 94, 0.35); }
+
+    /* 별표(관심종목) — 손가락으로 누르기 좋게 44px */
+    .star {
+      background: var(--bg-elev); border: 1px solid var(--border); color: var(--text-sub);
+      min-width: 44px; min-height: 44px; border-radius: 11px; cursor: pointer;
+      font-size: calc(17px * var(--fsc)); line-height: 1; padding: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .star:active { transform: scale(0.94); }
+    .star.on { color: var(--amber); border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.14); }
+
+    .setup-box {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+      background: var(--bg-main); border: 1px solid var(--border);
+      border-radius: 13px; padding: 11px; margin-bottom: 10px;
+    }
+    .sb-lbl { font-size: calc(11px * var(--fsc)); color: var(--text-sub); line-height: 1.35; }
+    .sb-val { font-family: var(--font-mono); font-size: calc(14px * var(--fsc)); font-weight: 800; margin-top: 3px; }
+
+    .f-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    .f-box { background: var(--bg-elev); padding: 7px 9px; border-radius: 8px; font-size: calc(11.5px * var(--fsc)); min-width: 0; }
+    .f-top { display: flex; justify-content: space-between; gap: 4px; }
+    .f-top span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .f-bar { height: 5px; background: rgba(255, 255, 255, 0.08); border-radius: 99px; margin-top: 5px; overflow: hidden; }
+    .f-fill { height: 100%; background: var(--cyan); border-radius: 99px; }
+
+    .expand-hint {
+      margin-top: 11px; text-align: center;
+      font-size: calc(11.5px * var(--fsc)); font-weight: 700; color: var(--text-sub);
+    }
+    .expand-hint .ar { display: inline-block; transition: transform .18s ease; }
+    .item-card.open .expand-hint .ar { transform: rotate(180deg); }
+    .item-card.open .expand-hint { color: var(--cyan); }
+
+    /* ---------- 펼친 상세 ---------- */
+    .detail { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border); }
+    .item-card.open .detail { display: block; }
+    .d-h {
+      font-size: calc(13.5px * var(--fsc)); font-weight: 800;
+      margin: 18px 0 8px; display: flex; align-items: center; gap: 7px;
+    }
+    .d-h:first-child { margin-top: 0; }
+    .d-h::before { content: ""; width: 4px; height: calc(14px * var(--fsc)); background: var(--cyan); border-radius: 2px; }
+    .why-row {
+      display: grid; grid-template-columns: 92px 1fr; gap: 10px;
+      padding: 9px 0; border-top: 1px dashed var(--border);
+      font-size: calc(13px * var(--fsc)); line-height: 1.62; color: #CBD5E1;
+    }
+    .why-row:first-child { border-top: 0; }
+    .why-row .k { font-weight: 800; color: var(--cyan); font-size: calc(12.5px * var(--fsc)); }
+    .why-row .k i { display: block; font-style: normal; font-family: var(--font-mono); font-size: calc(11px * var(--fsc)); color: var(--text-sub); margin-top: 2px; }
+    .risk-row {
+      font-size: calc(13px * var(--fsc)); line-height: 1.6; color: #B6C0CE;
+      padding-left: 17px; position: relative; margin-top: 6px;
+    }
+    .risk-row::before { content: "!"; position: absolute; left: 0; font-family: var(--font-mono); font-weight: 800; color: var(--amber); }
+    .d-plain { font-size: calc(13.5px * var(--fsc)); line-height: 1.72; color: #CBD5E1; }
+    .d-plain b { color: var(--cyan); font-family: var(--font-mono); font-weight: 800; }
+    .d-note { font-size: calc(11.5px * var(--fsc)); line-height: 1.65; color: var(--text-sub); margin-top: 12px; }
+
+    .up { color: var(--green); }
+    .dn { color: var(--red); }
+    .fl { color: var(--text-sub); }
+
+    /* ---------- 상태 안내 ---------- */
+    .state-box {
+      text-align: center; padding: 40px 20px; color: var(--text-sub);
+      font-size: calc(14px * var(--fsc)); line-height: 1.75;
+    }
+    .state-box b { color: var(--text); }
+    .state-box .hint { display: block; margin-top: 10px; font-size: calc(13px * var(--fsc)); }
+    .more-btn {
+      width: 100%; margin-top: 4px; padding: 16px; cursor: pointer;
+      background: var(--bg-elev); border: 1px solid var(--border); border-radius: 14px;
+      color: var(--cyan); font-family: var(--font-sans); font-size: calc(14.5px * var(--fsc)); font-weight: 800;
+    }
+    .more-btn:active { border-color: var(--cyan); }
+    .foot-note {
+      margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border);
+      font-size: calc(11.5px * var(--fsc)); line-height: 1.7; color: var(--text-sub);
+    }
+    .foot-note b { color: var(--text); }
+
+    /* 관심종목 전체 해제 버튼 */
+    .mini-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--text-sub);
+      font-family: var(--font-sans); font-size: calc(11px * var(--fsc)); font-weight: 700;
+      padding: 6px 9px; border-radius: 8px; cursor: pointer; white-space: nowrap;
+    }
+
+    /* ---------- 폰 ---------- */
+    @media (max-width: 560px) {
+      .setup-box { grid-template-columns: repeat(2, 1fr); }
+      .f-row { grid-template-columns: repeat(3, 1fr); }
+    }
+    html.fs3 .f-row { grid-template-columns: repeat(2, 1fr); }
+    html.fs3 .setup-box { grid-template-columns: repeat(2, 1fr); }
+    html.fs3 .item-head { flex-wrap: wrap; }
+    html.fs3 .item-head .right { margin-left: auto; }
+    html.fs3 .why-row { grid-template-columns: 1fr; gap: 4px; }
+    @media (max-width: 380px) {
+      .f-row { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div style="min-width:0">
+        <div class="hd-title">🔍 ARGON 전 종목 타점 조회기</div>
+        <div id="metaInfo" class="hd-meta">데이터 불러오는 중...</div>
+      </div>
+      <div class="hd-actions">
+        <button class="fs-btn" id="fsBtn" type="button" aria-label="글씨 크기 바꾸기" title="글씨 크기: 크게 → 아주 크게 → 보통">가</button>
+        <a href="index.html" class="back-btn">← 데일리 리포트</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="search-wrap" id="searchWrap">
+      <span class="search-ico">🔎</span>
+      <input type="text" id="qInput" class="search-input" inputmode="search" autocomplete="off" autocapitalize="off" spellcheck="false"
+             placeholder="이름·티커·초성 (삼전 / ㅅㅅㅈㅈ / NVDA / 비트)" oninput="onType()" autofocus />
+      <button class="search-clear" id="clrBtn" type="button" aria-label="검색어 지우기">✕</button>
+    </div>
+
+    <div class="filter-row" id="chipRow">
+      <button class="chip fav" data-mk="FAV" onclick="setMk('FAV', this)">★ 관심종목</button>
+      <button class="chip active" data-mk="ALL" onclick="setMk('ALL', this)">전체 종목</button>
+      <button class="chip" data-mk="K"   onclick="setMk('K', this)">🇰🇷 한국주식</button>
+      <button class="chip" data-mk="U"   onclick="setMk('U', this)">🇺🇸 미국주식·ETF</button>
+      <button class="chip" data-mk="C"   onclick="setMk('C', this)">🪙 크립토</button>
+      <button class="chip" data-mk="G70" onclick="setMk('G70', this)">🔥 70점+</button>
+      <button class="chip" data-mk="G55" onclick="setMk('G55', this)">🟢 55점+</button>
+    </div>
+
+    <div class="bar-row">
+      <div class="count-txt" id="countTxt">—</div>
+      <div class="sorts" id="sortRow">
+        <button class="sort-btn active" data-s="score" onclick="setSort('score', this)">점수순</button>
+        <button class="sort-btn" data-s="up"    onclick="setSort('up', this)">상승률</button>
+        <button class="sort-btn" data-s="down"  onclick="setSort('down', this)">하락률</button>
+        <button class="sort-btn" data-s="name"  onclick="setSort('name', this)">이름순</button>
+      </div>
+    </div>
+
+    <div id="resultRoot"></div>
+
+    <p class="foot-note">
+      점수는 <b>추세 20% · 모멘텀 25% · 가치·실적 20% · 수급 20% · 안정성 15%</b>로 계산한 참고용 숫자예요.
+      진입가·목표가·손절가는 <b>전부 예약 지정가</b> 기준이고, 지금 당장 사라는 뜻이 아닙니다.
+      ETF는 회사 이익·수급 지표가 없어 가치·수급을 <b>중립 50점</b>으로 둡니다.
+      색은 <b class="up">초록 = 상승</b>, <b class="dn">빨강 = 하락</b>입니다.
+      ★ 별표를 누르면 <b>관심종목</b>에 담기고 목록 맨 위에 고정됩니다(이 폰에만 저장됩니다).
+    </p>
+  </main>
+
+  <script>
+  /* =======================================================================
+     ARGON 전 종목 조회기
+     - search.json 과 같은 폴더에 두면 됩니다(없으면 GitHub Pages 주소에서 받아옵니다).
+     - 행 스키마(20칸): [0]이름 [1]코드 [2]시장(K/U/C) [3]종류(S주식/E ETF)
+                        [4]산업번호 [5]점수 [6]순위 [7]시장전체수 [8]현재가
+                        [9]전일% [10]1개월% [11]RSI [12]진입 [13]손절 [14]1차목표 [15]2차목표
+                        [16]손익비 [17]5팩터 [18]보조지표8 [19]별칭(검색용)
+       보조지표 r[18] = [0]200일선 괴리% [1]6개월 상승률%(마지막 달 제외) [2]시장 대비 3개월%p
+                        [3]PER 또는 거래대금/시총% [4]이익 성장률% [5]수급%(K)·애널평점(U)·펀딩비(C)
+                        [6]ATR%(하루 평균 흔들림) [7]20일 변동성%(연환산)
+     ======================================================================= */
+  let DB = null;
+  let curMk = 'ALL';     // FAV | ALL | K | U | C | G70 | G55
+  let sortMode = 'score';
+  let limit = 60;
+  const STEP = 60;
+  let IDX = [];
+
+  /* ---------- 글씨 크기 (1 보통 / 2 크게 / 3 아주 크게) ---------- */
+  const FS_KEY = 'argonCheckFS';
+  function curFS() { try { const v = +(localStorage.getItem(FS_KEY) || 2); return (v >= 1 && v <= 3) ? v : 2; } catch (e) { return 2; } }
+  function applyFS(n) {
+    const h = document.documentElement;
+    h.classList.remove('fs1', 'fs2', 'fs3');
+    h.classList.add('fs' + n);
+    try { localStorage.setItem(FS_KEY, n); } catch (e) {}
+  }
+  applyFS(curFS());
+  document.getElementById('fsBtn').addEventListener('click', function () { applyFS(curFS() % 3 + 1); });
+
+  /* ---------- 관심종목 (이 브라우저에만 저장) ---------- */
+  const FAV_KEY = 'argonFavs';
+  let FAVS = [];
+  function loadFavs() {
+    try { const v = JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); FAVS = Array.isArray(v) ? v.filter(x => typeof x === 'string') : []; }
+    catch (e) { FAVS = []; }
+  }
+  function saveFavs() { try { localStorage.setItem(FAV_KEY, JSON.stringify(FAVS)); } catch (e) {} }
+  const favKey = r => r[2] + ':' + r[1];
+  const isFav  = r => FAVS.indexOf(favKey(r)) >= 0;
+  function toggleFav(r) {
+    const k = favKey(r), i = FAVS.indexOf(k);
+    if (i >= 0) FAVS.splice(i, 1); else FAVS.push(k);
+    saveFavs();
+    paintFavChip();
+    renderList();
+  }
+  function paintFavChip() {
+    const c = document.querySelector('[data-mk="FAV"]');
+    if (c) c.textContent = '★ 관심종목 (' + FAVS.length + ')';
+  }
+  loadFavs();
+  paintFavChip();
+
+  /* ---------- 숫자 포맷 ---------- */
+  const isNum = v => typeof v === 'number' && isFinite(v);
+  function fmtPx(v, mk) {
+    if (!isNum(v)) return '-';
+    const n = v;
+    if (mk === 'K') return Math.round(n).toLocaleString('ko-KR') + '원';
+    if (n >= 1000) return '$' + n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    if (n >= 1) return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (n >= 0.01) return '$' + n.toFixed(4);
+    return '$' + n.toFixed(8).replace(/0+$/, '');
+  }
+  const fmtPct = v => isNum(v) ? (v > 0 ? '+' : '') + v.toFixed(2) + '%' : '-';
+  const sg = v => isNum(v) ? (v > 0 ? '+' : '') + (+v).toFixed(v % 1 ? 1 : 0) : '-';
+  const cls = v => !isNum(v) ? 'fl' : (v > 0 ? 'up' : v < 0 ? 'dn' : 'fl');
+
+  /* ---------- 점수 구간 (카드뉴스와 같은 기준) ---------- */
+  function band(s) {
+    if (s >= 70) return ['좋음',   'buy'];
+    if (s >= 55) return ['살 만함', 'hold'];
+    if (s >= 40) return ['경계',   'warn'];
+    return ['방어 우선', 'sell'];
+  }
+
+  /* ---------- 검색 ---------- */
+  const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+  function norm(s) { return String(s || '').toLowerCase().replace(/[\s\-_,.\/()&]/g, ''); }
+  function choseong(s) {
+    let o = '';
+    for (const ch of String(s || '')) {
+      const c = ch.charCodeAt(0);
+      if (c >= 0xAC00 && c <= 0xD7A3) o += CHO[Math.floor((c - 0xAC00) / 588)];
+      else if (/[a-z0-9]/.test(ch)) o += ch;
+    }
+    return o;
+  }
+
+  /* ---------- 데이터 ---------- */
+  async function loadSearchDB() {
+    const srcs = ['search.json', 'https://rohemian.github.io/argon-report/search.json'];
+    let d = null;
+    for (const s of srcs) {
+      try { const r = await fetch(s, { cache: 'no-store' }); if (r.ok) { d = await r.json(); break; } } catch (e) {}
+    }
+    const meta = document.getElementById('metaInfo');
+    if (!d || !d.rows || !d.rows.length) {
+      meta.textContent = '목록을 불러오지 못했어요';
+      document.getElementById('resultRoot').innerHTML =
+        '<div class="state-box">점수 목록(<b>search.json</b>)을 불러오지 못했어요.' +
+        '<span class="hint">이 파일과 <b>search.json</b>을 <b>같은 폴더</b>에 두거나,<br>' +
+        '<b>rohemian.github.io/argon-report/check.html</b> 로 열어주세요.</span></div>';
+      return;
+    }
+    DB = d;
+    IDX = DB.rows.map(r => ({
+      n: norm(r[0]), c: norm(r[1]), a: norm(r[19] || ''),
+      n2: norm((r[19] || '') + ' ' + r[0] + ' ' + r[1]),
+      ch: choseong(r[0])
+    }));
+    meta.textContent = DB.d + ' 기준 · ' + DB.u;
+    document.title = 'ARGON AI — ' + DB.rows.length.toLocaleString() + ' 종목 퀀트 점수 & 타점 스캐너';
+    const n70 = DB.rows.filter(r => r[5] >= 70).length, n55 = DB.rows.filter(r => r[5] >= 55).length;
+    document.querySelector('[data-mk="ALL"]').textContent = '전체 (' + DB.rows.length.toLocaleString() + ')';
+    document.querySelector('[data-mk="K"]').textContent = '🇰🇷 한국 (' + DB.n.KR.toLocaleString() + ')';
+    document.querySelector('[data-mk="U"]').textContent = '🇺🇸 미국 (' + DB.n.US.toLocaleString() + ')';
+    document.querySelector('[data-mk="C"]').textContent = '🪙 크립토 (' + DB.n.CR.toLocaleString() + ')';
+    document.querySelector('[data-mk="G70"]').textContent = '🔥 70점+ (' + n70 + ')';
+    document.querySelector('[data-mk="G55"]').textContent = '🟢 55점+ (' + n55.toLocaleString() + ')';
+    renderList();
+  }
+
+  /* ---------- 필터 · 정렬 ---------- */
+  function setMk(m, btn) {
+    curMk = m; limit = STEP;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    renderList();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function setSort(s, btn) {
+    sortMode = s; limit = STEP;
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderList();
+  }
+  function onType() {
+    document.getElementById('searchWrap').classList.toggle('filled', !!document.getElementById('qInput').value);
+    limit = STEP;
+    renderList();
+  }
+  document.getElementById('clrBtn').onclick = function () {
+    const q = document.getElementById('qInput'); q.value = ''; onType(); q.focus();
+  };
+
+  function matchScore(i, k, jamo) {
+    const x = IDX[i];
+    if (x.c === k || x.n === k) return 100;
+    if (x.n.startsWith(k)) return 92;
+    if (x.c.startsWith(k)) return 88;
+    if (x.a && x.a.startsWith(k)) return 80;
+    if (x.n2.includes(k)) return 66;
+    if (jamo && jamo.length >= 2 && x.ch.startsWith(jamo)) return 60;
+    return 0;
+  }
+
+  function renderList() {
+    if (!DB) return;
+    const raw = (document.getElementById('qInput').value || '').trim();
+    const k = norm(raw), jamo = raw ? choseong(raw) : '';
+    const rows = DB.rows;
+    const matched = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      if (curMk === 'FAV' && !isFav(r)) continue;
+      if (curMk === 'G70' && r[5] < 70) continue;
+      if (curMk === 'G55' && r[5] < 55) continue;
+      if (curMk === 'K' || curMk === 'U' || curMk === 'C') { if (r[2] !== curMk) continue; }
+      let ms = 0;
+      if (k) { ms = matchScore(i, k, jamo); if (!ms) continue; }
+      matched.push(ms ? [ms, i] : [0, i]);
+    }
+
+    /* 정렬: 관심종목 먼저 → 검색정확도 → 선택한 기준 */
+    matched.sort(function (a, b) {
+      const A = rows[a[1]], B = rows[b[1]];
+      const fa = isFav(A) ? 1 : 0, fb = isFav(B) ? 1 : 0;
+      if (fa !== fb) return fb - fa;
+      if (k && b[0] !== a[0]) return b[0] - a[0];
+      switch (sortMode) {
+        case 'up':   return (B[9] || 0) - (A[9] || 0);
+        case 'down': return (A[9] || 0) - (B[9] || 0);
+        case 'name': return String(A[0]).localeCompare(String(B[0]), 'ko');
+        default:     return B[5] - A[5] || a[1] - b[1];
+      }
+    });
+
+    const root = document.getElementById('resultRoot');
+    const cnt = document.getElementById('countTxt');
+
+    if (curMk === 'FAV' && !FAVS.length) {
+      cnt.innerHTML = '';
+      root.innerHTML = '<div class="hint-empty"><b>★ 관심종목</b>이 아직 비어 있어요.<br>' +
+        '종목 카드 오른쪽 위 <b>★ 별표</b>를 누르면 여기에 담기고, 목록 맨 위에도 고정됩니다.<br>' +
+        '저장은 이 폰(브라우저)에만 되고 서버로 나가지 않아요.</div>';
+      return;
+    }
+    if (!matched.length) {
+      cnt.innerHTML = '';
+      root.innerHTML = '<div class="state-box"><b>' + escapeHTML(raw) + '</b> 는 목록에 없어요.' +
+        '<span class="hint">줄여서(<b>삼전</b>) · 초성만(<b>ㅅㅅㅈㅈ</b>) · 영어 티커(<b>NVDA</b>) · 별칭(<b>비트</b>) 다 됩니다.<br>' +
+        '없는 종목이면 알려주세요 — 추가해 드릴게요.</span></div>';
+      return;
+    }
+
+    /* 관심종목이 있으면 맨 위에 별도 구역으로 한 번 더 보여줍니다 */
+    let pinnedHtml = '';
+    const favCount = matched.filter(m => isFav(rows[m[1]])).length;
+    if (FVS_SHOW && favCount && curMk !== 'FAV') {
+      const favOnly = matched.filter(m => isFav(rows[m[1]])).slice(0, 12);
+      pinnedHtml =
+        '<div class="sec-head fav-head">★ 관심종목 <span class="cnt">' + FAVS.length + '개</span><span class="ln"></span>' +
+        '<button class="mini-btn" type="button" data-clear-fav="1">전체 해제</button></div>' +
+        favOnly.map(m => itemHTML(rows[m[1]], true)).join('');
+    }
+
+    const restCount = matched.length - (FVS_SHOW ? favCount : 0);
+    cnt.innerHTML = '찾은 종목 <b>' + matched.length.toLocaleString() + '</b>개 · 지금 <b>' +
+      Math.min(limit, matched.length) + '</b>개 표시' +
+      (favCount ? ' · ★ <b>' + favCount + '</b>개' : '');
+
+    const view = matched.slice(0, limit).map(m => itemHTML(rows[m[1]]));
+    let html = pinnedHtml + (pinnedHtml ? '<div class="sec-head">전체 목록 <span class="ln"></span></div>' : '') + view.join('');
+    if (matched.length > limit) {
+      html += '<button class="more-btn" type="button" onclick="moreItems()">▼ ' +
+        Math.min(STEP, matched.length - limit) + '개 더 보기 (남은 ' + (matched.length - limit).toLocaleString() + '개)</button>';
+    }
+    root.innerHTML = html;
+  }
+
+  let FVS_SHOW = true;   // 관심종목 구역 표시 여부(관심 탭에서는 끔)
+  function moreItems() { limit += STEP; renderList(); }
+
+  /* ---------- 카드 한 장 ---------- */
+  function itemHTML(r, pinned) {
+    const name = r[0], code = r[1], mk = r[2], kind = r[3], secIdx = r[4], score = r[5],
+          rank = r[6], totalN = r[7], px = r[8], d1 = r[9], m1 = r[10], rsi = r[11],
+          entry = r[12], sl = r[13], tp1 = r[14], tp2 = r[15], rr = r[16],
+          f5 = (r[17] || []).slice(0, 5), z = r[18] || [];
+
+    const secName = (DB.sec && DB.sec[secIdx]) || '기타';
+    const mkName = mk === 'K' ? 'KRX' : (mk === 'U' ? 'US' : 'CRYPTO');
+    const b = band(score);
+    const isEtf = kind === 'E';
+    const on = isFav(r);
+    const fLabels = mk === 'C'
+      ? ['추세', '모멘텀', '거래활력', '파생쏠림', '안정성']
+      : (mk === 'U' ? ['추세', '모멘텀', '가치·실적', '월가평가', '안정성']
+                    : ['추세', '모멘텀', '가치·실적', '외인·기관', '안정성']);
+
+    const rankTxt = (isNum(rank) && isNum(totalN) && totalN > 0)
+      ? ' · 상위 ' + (rank / totalN * 100).toFixed(1) + '% (' + rank + '/' + totalN.toLocaleString() + ')'
+      : '';
+    const atr = isNum(z[6]) ? ' · 하루 흔들림 ' + z[6] + '%' : '';
+
+    return `
+      <article class="item-card${pinned ? ' pinned' : ''}" data-card="${escapeHTML(favKey(r))}">
+        <div class="item-head tappable" data-open="1">
+          <div class="left">
+            <div class="nm-line">
+              <span class="mk-badge">${mkName} · ${escapeHTML(code)}</span>
+              <strong class="nm-strong">${escapeHTML(name)}</strong>
+              <span class="sec-txt">${escapeHTML(secName)}</span>
+              ${isEtf ? '<span class="etf-tag">ETF · 가치/수급 중립 50</span>' : ''}
+            </div>
+            <div class="meta-line">
+              현재가 <strong>${fmtPx(px, mk)}</strong>
+              <span class="${cls(d1)}">(${fmtPct(d1)})</span> · 1개월 <span class="${cls(m1)}">${fmtPct(m1)}</span>
+              ${isNum(rsi) ? ' · RSI ' + rsi : ''}${rankTxt}${atr}
+            </div>
+          </div>
+          <div class="right">
+            <button class="star${on ? ' on' : ''}" type="button" data-fav="1"
+                    aria-label="${escapeHTML(name)} 관심종목 ${on ? '해제' : '추가'}"
+                    title="${on ? '관심종목 해제' : '관심종목 담기'}">★</button>
+            <span class="score-pill ${b[1]}">${score}점 · ${b[0]}</span>
+          </div>
+        </div>
+
+        <div class="setup-box">
+          <div><div class="sb-lbl">🎯 진입가 (예약)</div><div class="sb-val" style="color:var(--cyan);">${fmtPx(entry, mk)}</div></div>
+          <div><div class="sb-lbl">🚀 1차 목표</div><div class="sb-val up">${fmtPx(tp1, mk)}</div></div>
+          <div><div class="sb-lbl">🔥 2차 목표</div><div class="sb-val up">${fmtPx(tp2, mk)}</div></div>
+          <div><div class="sb-lbl">🛡️ 손절선 (1:${isNum(rr) ? rr : '-'})</div><div class="sb-val dn">${fmtPx(sl, mk)}</div></div>
+        </div>
+
+        <div class="f-row">
+          ${f5.map(function (fv, idx) {
+            const v = isNum(fv) ? Math.max(0, Math.min(100, fv)) : 0;
+            return '<div class="f-box"><div class="f-top"><span>' + fLabels[idx] + '</span><strong>' +
+              (isNum(fv) ? fv : '-') + '</strong></div>' +
+              '<div class="f-bar"><div class="f-fill" style="width:' + v + '%"></div></div></div>';
+          }).join('')}
+        </div>
+
+        <div class="expand-hint tappable" data-open="1"><span class="ar">▾</span> 눌러서 자세히 보기</div>
+        <div class="detail-slot"></div>
+      </article>`;
+  }
+
+  /* ---------- 펼친 상세: 왜 이 점수인가 ---------- */
+  function whyText(r) {
+    const m = r[2], f = r[17] || [], z = r[18] || [], isEtf = r[3] === 'E';
+    const BENCH = { K: '코스피', U: '시장', C: '비트코인' };
+    const items = [];
+    const dev = z[0];
+    items.push(['trend', f[0], isNum(dev)
+      ? (dev >= 0
+        ? '1년 평균 가격(200일선)보다 ' + sg(dev) + '% 위에 있어요. 큰 흐름이 위를 향하고 있어요.'
+        : '1년 평균 가격(200일선)보다 ' + sg(dev) + '% 아래예요. 큰 흐름은 아직 회복 중이라 확인이 필요해요.')
+      : '추세를 계산할 자료가 부족해 중간 점수로 뒀어요.']);
+    items.push(['mom', f[1], (isNum(z[1]) || isNum(z[2]))
+      ? '최근 6개월(마지막 한 달 제외) ' + sg(z[1]) + '%, 최근 3개월은 ' + (BENCH[m] || '시장') + '보다 ' + sg(z[2]) + '%p. 오르던 종목이 한동안 더 오르는 경향(모멘텀)을 봐요.'
+      : '모멘텀 자료가 부족해 중간 점수로 뒀어요.']);
+
+    let vt;
+    if (isEtf) vt = 'ETF라서 회사 이익·PER 지표가 없어요. 그래서 가치 항목은 중간(50점)으로 뒀어요.';
+    else if (m === 'C') vt = isNum(z[3]) ? '하루 거래대금이 시가총액의 ' + z[3] + '%예요. 거래가 활발할수록 원하는 가격에 사고팔기 쉬워요.' : '거래대금 자료가 없어 중간 점수로 뒀어요.';
+    else if (isNum(z[3]) && z[3] > 0) vt = '내년 예상 이익 기준 PER ' + z[3] + '배' + (isNum(z[4]) ? ', 이익 증가 예상 ' + sg(z[4]) + '%' : '') + '. PER은 번 돈 1원에 몇 원을 내고 사는가 — 낮을수록 싸요.';
+    else vt = '이익 추정치가 없어 중간 점수로 뒀어요.';
+    items.push(['val', f[2], vt]);
+
+    let ft;
+    if (isEtf) ft = 'ETF는 외국인·기관 수급 지표가 따로 없어서 중간(50점)으로 뒀어요.';
+    else if (m === 'K') ft = isNum(z[5])
+      ? '최근 20거래일 외국인+기관이 ' + (z[5] > 0 ? '순매수' : '순매도') + '(시총 대비 ' + sg(z[5]) + '%). ' + (z[5] > 0 ? '큰손이 사 모으는 중이에요.' : '큰손은 아직 파는 중이라 나눠서 접근하세요.')
+      : '수급 자료가 없어 중간 점수로 뒀어요.';
+    else if (m === 'U') ft = isNum(z[5])
+      ? '월가 애널리스트 평균 평가 ' + z[5] + '점(1=적극 매수, 5=매도)이에요. ' + (z[5] <= 2 ? '전문가들이 사라고 하는 편이에요.' : '전문가 평가는 중립 이하예요.')
+      : '애널리스트 평가가 없어 중간 점수로 뒀어요.';
+    else {
+      const fv = z[5];
+      if (!isNum(fv)) ft = '펀딩비 자료가 없어 중간 점수로 뒀어요.';
+      else if (fv < 0) ft = '선물 펀딩비 ' + fv + '%(8시간) — 내린다에 건 사람이 많아요. 반등하면 이들이 되사면서 오를 연료가 돼요.';
+      else if (fv <= 0.01) ft = '선물 펀딩비 ' + fv + '%(8시간) — 과열이 아니에요. 빚내서 산 사람이 적어 급하게 흔들릴 위험이 낮아요.';
+      else ft = '선물 펀딩비 ' + fv + '%(8시간) — 오른다에 빚내서 건 사람이 많아요. 흔들기 급락 주의.';
+    }
+    items.push(['flow', f[3], ft]);
+
+    items.push(['vol', f[4], (isNum(z[6]) || isNum(z[7]))
+      ? '하루 평균 흔들림 ' + (isNum(z[6]) ? z[6] : '-') + '%, 연 변동성 ' + (isNum(z[7]) ? z[7] : '-') + '%. ' + (isNum(z[7]) && z[7] <= 35 ? '덜 흔들려서 손절선을 가깝게 둘 수 있어요.' : '많이 흔들리니 비중은 작게 가져가세요.')
+      : '변동성 자료가 부족해 중간 점수로 뒀어요.']);
+
+    const valid = items.filter(x => isNum(x[1]));
+    const order = valid.slice().sort((a, b) => b[1] - a[1]);
+    return { top3: order.slice(0, 3), weak: order.length ? order[order.length - 1] : ['vol', 50, items[4][2]], all: items };
+  }
+
+  function detailHTML(r) {
+    const m = r[2], score = r[5], b = band(score);
+    const nm = { K: { trend: '추세', mom: '모멘텀', val: '가치·실적', flow: '수급', vol: '안정성' },
+                 U: { trend: '추세', mom: '모멘텀', val: '가치·실적', flow: '전문가 평가', vol: '안정성' },
+                 C: { trend: '추세', mom: '모멘텀', val: '거래 활력', flow: '파생 쏠림', vol: '안정성' } }[m] || {};
+    const w = whyText(r);
+    const isEtf = r[3] === 'E';
+
+    const risks = [];
+    if (w.weak && isNum(w.weak[1])) {
+      risks.push(w.weak[1] < 50
+        ? '약한 고리 · ' + (nm[w.weak[0]] || w.weak[0]) + ' ' + w.weak[1] + '점: ' + w.weak[2]
+        : '가장 낮은 항목(' + (nm[w.weak[0]] || w.weak[0]) + ')도 ' + w.weak[1] + '점 — 뚜렷한 약점은 없어요. 그래도 손절선은 꼭 지정하세요.');
+    }
+    if (isNum(r[11])) {
+      if (r[11] >= 70) risks.push('단기 과열(RSI ' + r[11] + ') — 추격 금지, 지정가까지 기다리기.');
+      else if (r[11] <= 30) risks.push('많이 빠진 상태(RSI ' + r[11] + ') — 반등이 언제 올지는 아무도 몰라요. 나눠서 접근.');
+    }
+    if (isEtf) risks.push('ETF는 여러 종목 묶음이라 개별 회사 위험은 적지만, 시장 전체가 빠지면 같이 빠져요.');
+    const gapDown = isNum(r[12]) && isNum(r[8]) && r[8] > 0 ? (1 - r[12] / r[8]) * 100 : null;
+    if (gapDown != null && gapDown >= 12) risks.push('진입가가 현재가보다 ' + gapDown.toFixed(1) + '% 낮아요 — 오지 않으면 그날은 안 사는 게 맞습니다.');
+
+    return `<div class="detail">
+      <div class="d-h">왜 이 점수인가요</div>
+      <div>${w.top3.map(function (x) {
+        return '<div class="why-row"><span class="k">' + (nm[x[0]] || x[0]) + '<i>' + x[1] + '점</i></span><span>' + x[2] + '</span></div>';
+      }).join('')}</div>
+
+      <div class="d-h">이 종목, 이런 점은 알아두세요</div>
+      <div>${risks.map(x => '<div class="risk-row">' + x + '</div>').join('')}</div>
+
+      <div class="d-h">그래서 어떻게 하면 되나요</div>
+      <div class="d-plain">한 번에 다 사지 마시고 <b>${fmtPx(r[12], m)}</b> 근처에 왔을 때 <b>3~4번에 나눠서</b> 조금씩.
+        잘못되면 <b>${fmtPx(r[13], m)}</b>에서 이유를 따지지 말고 정리하는 게 오래 버티는 방법이에요.
+        절반은 <b>${fmtPx(r[14], m)}</b>에서 팔고, 나머지는 <b>${fmtPx(r[15], m)}</b>까지 끌고 갑니다.</div>
+
+      <div class="d-h">점수 계산 내역</div>
+      ${(r[17] || []).map(function (fv, i) {
+        const keys = ['trend', 'mom', 'val', 'flow', 'vol'];
+        const W = [20, 25, 20, 20, 15];
+        return '<div class="why-row"><span class="k">' + (nm[keys[i]] || keys[i]) + '<i>가중치 ' + W[i] + '%</i></span><span>' +
+          (isNum(fv) ? fv + '점' : '-') + '</span></div>';
+      }).join('')}
+      <p class="d-note">점수는 주가 흐름과 공개 지표만으로 계산한 <b>참고 숫자</b>예요. 사라는 추천도, 파라는 추천도 아닙니다.</p>
+    </div>`;
+  }
+
+  function escapeHTML(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* ---------- 클릭 처리 (별표 · 펼치기 · 전체해제) ---------- */
+  document.addEventListener('click', function (e) {
+    const clrFav = e.target.closest('[data-clear-fav]');
+    if (clrFav) {
+      if (confirm('관심종목을 전부 해제할까요? (' + FAVS.length + '개)')) {
+        FAVS = []; saveFavs(); paintFavChip(); renderList();
+      }
+      return;
+    }
+    const card = e.target.closest('.item-card');
+    if (!card) return;
+    const key = card.getAttribute('data-card');
+    const rec = DB.rows.find(r => favKey(r) === key);
+    if (!rec) return;
+
+    if (e.target.closest('[data-fav]')) { toggleFav(rec); return; }
+    if (e.target.closest('[data-open]')) {
+      const slot = card.querySelector('.detail-slot');
+      if (!slot.dataset.done) { slot.innerHTML = detailHTML(rec); slot.dataset.done = '1'; }
+      card.classList.toggle('open');
+      if (card.classList.contains('open')) {
+        setTimeout(function () { card.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 60);
+      }
+    }
+  });
+
+  /* ---------- 시작 ---------- */
+  window.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('searchWrap').classList.toggle('filled', !!document.getElementById('qInput').value);
+    loadSearchDB();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') document.getElementById('clrBtn').click();
+  });
+  </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
