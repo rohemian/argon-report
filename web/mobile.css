@@ -1,0 +1,213 @@
+/* ================= v5: 폰(갤럭시) UX — 글씨 크기 3단 조절 ================= */
+:root{--fsc:1}
+html.fs1{--fsc:1} html.fs2{--fsc:1.25} html.fs3{--fsc:1.62}
+.dact{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mopen,.fopen{display:none}
+.msheet{display:none}
+@media (max-width:899px){
+  html{-webkit-text-size-adjust:100%}
+  html{--fsc:1.25}
+  body{padding-bottom:calc(26px + env(safe-area-inset-bottom));overflow-x:clip}
+  #root>*{max-width:100%}
+  /* ---------- 상단 바: 한 줄, 내용 안 가림 ---------- */
+  .nav-in{width:100%;padding:8px 12px;gap:8px;flex-wrap:nowrap}
+  .nav .brand{font-size:15px;line-height:1.2;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .nav .brand small{display:none}
+  .nav .dact,.nav .live{display:none}
+  .fopen{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;margin-left:auto;
+    min-height:52px;min-width:52px;padding:0 14px;font:800 19px 'Noto Sans KR';color:var(--amber2);
+    background:var(--plate2);border:1px solid var(--rule);border-radius:13px;cursor:pointer}
+  .mopen{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-height:52px;padding:0 14px;
+    font:800 16px 'Noto Sans KR';color:#1a1205;background:var(--amber);border:1px solid var(--amber);border-radius:13px;cursor:pointer}
+  .mopen:active{background:var(--amber2)}
+  /* ---------- 저장·도구 시트 ---------- */
+  body.mshow{overflow:hidden}
+  body.mshow .msheet{display:block;position:fixed;inset:0;z-index:200;background:rgba(4,6,9,.78)}
+  .msheet .mp{position:absolute;left:0;right:0;bottom:0;background:var(--plate);border-top:1px solid var(--rule);
+    border-radius:22px 22px 0 0;padding:10px 14px calc(18px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
+  .msheet .bar{width:46px;height:4px;border-radius:2px;background:var(--rule);margin:4px auto 12px}
+  .msheet .mh{font:900 20px 'Noto Sans KR'}
+  .msheet .ms{font:600 14px var(--mono);color:var(--mute);margin:5px 0 14px;line-height:1.5}
+  .msheet .grid5{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .msheet .mg{display:grid;gap:10px;margin-top:10px}
+  .msheet button,.msheet a.mb{display:flex;align-items:center;justify-content:center;gap:8px;min-height:62px;padding:12px 10px;
+    font:800 17px 'Noto Sans KR';color:var(--text);background:var(--plate2);border:1px solid var(--rule);
+    border-radius:15px;text-decoration:none;cursor:pointer;text-align:center;line-height:1.3}
+  .msheet button:active,.msheet a.mb:active{background:#2b313b;border-color:var(--amber)}
+  .msheet .pri{background:var(--amber);color:#1a1205;border-color:var(--amber)}
+  .msheet .go{border-color:var(--amber);color:var(--amber2)}
+  .msheet .lbl{font:900 15px 'Noto Sans KR';color:var(--mute);margin:16px 0 2px}
+  .msheet .fsrow{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:8px}
+  .msheet .fsbtn{min-height:58px;font:800 16px 'Noto Sans KR';color:var(--text);background:var(--plate2);border:1px solid var(--rule);border-radius:14px}
+  .msheet .fsbtn.on{border-color:var(--amber);background:rgba(244,166,42,.16);color:var(--amber2)}
+  .msheet .note{font-size:14px;margin-top:12px}
+  /* ---------- 카드: 폰 1열 ---------- */
+  .card{width:100%;max-width:100%;margin:12px 0 0;border-radius:0;border-left:0;border-right:0}
+  .pad{padding:20px 16px}
+  .head{grid-template-columns:1fr;gap:8px;padding-bottom:14px}
+  h1{font-size:calc(33px*var(--fsc));line-height:1.2}
+  .eyebrow{font-size:calc(15px*var(--fsc))}
+  .stamp{text-align:left;font:600 calc(14px*var(--fsc))/1.7 var(--mono)}
+  .stamp strong{display:inline-block;font-size:calc(17px*var(--fsc));margin-right:8px}
+  h2{font-size:calc(23px*var(--fsc));margin:26px 0 12px;line-height:1.3}
+  h2 small{font-size:calc(14px*var(--fsc))}
+  h2::before{width:5px;height:calc(21px*var(--fsc));height:21px}
+  .top3{grid-template-columns:1fr;gap:12px;margin-top:14px}
+  .gauge{padding:16px}
+  .gauge .lbl{font-size:calc(15px*var(--fsc))}
+  .dial{width:calc(176px*var(--fsc));height:calc(176px*var(--fsc))}
+  .dial svg{width:100%;height:100%}
+  .dial .v span{font-size:calc(52px*var(--fsc))}
+  .dial .v i{font-size:calc(14px*var(--fsc))}
+  .grade{font-size:calc(16px*var(--fsc))}
+  .gauge.dual .dial,.gauge.dual .dial svg{width:calc(112px*var(--fsc));height:calc(112px*var(--fsc))}
+  .gauge.dual .dial .v span{font-size:calc(34px*var(--fsc))}
+  .duo .lbl{font-size:calc(14.5px*var(--fsc))}
+  .parts,.diag{padding:16px}
+  .parts .ttl,.diag .ttl{font-size:calc(15px*var(--fsc))}
+  .prow{grid-template-columns:1fr auto;font-size:calc(16.5px*var(--fsc));margin-top:11px}
+  .prow .bar{height:10px}
+  .prow .s{font-size:calc(16.5px*var(--fsc))}
+  .cause{grid-template-columns:calc(74px*var(--fsc)) 1fr;font-size:calc(17px*var(--fsc));line-height:1.55;padding:9px 0}
+  .cause b{font-size:calc(14px*var(--fsc));height:auto;min-height:24px;line-height:1.4;padding:3px 2px}
+  .kpis,.kpis.six{grid-template-columns:1fr 1fr;gap:10px}
+  .kpi{padding:14px}
+  .kpi .k{font-size:calc(15px*var(--fsc));white-space:normal;overflow:visible}
+  .kpi .v{font-size:calc(27px*var(--fsc));white-space:normal}
+  .kpi .s{font-size:calc(14.5px*var(--fsc));white-space:normal;overflow:visible}
+  .vars{grid-template-columns:1fr;gap:12px}
+  .vbox{padding:16px}
+  .vbox .t{font-size:calc(20px*var(--fsc))}
+  .vbox .tag{font-size:calc(14px*var(--fsc))}
+  .vbox p{font-size:calc(17.5px*var(--fsc));line-height:1.7}
+  .vbox .k{font-size:calc(16px*var(--fsc))}
+  .trend .st{font-size:calc(16px*var(--fsc))}
+  .secT{font-size:calc(17px*var(--fsc))}
+  .secT th,.secT td{padding:13px 10px}
+  .secT thead th{font-size:calc(15px*var(--fsc))}
+  .secT td:first-child{width:auto;white-space:normal}
+  .heat{grid-template-columns:repeat(2,1fr);gap:8px}
+  .tile{height:auto;min-height:calc(104px*var(--fsc));padding:10px 8px}
+  .tile .n{font-size:calc(17.5px*var(--fsc));white-space:normal;line-height:1.25}
+  .tile .c{font-size:calc(13.5px*var(--fsc))}
+  .tile .p{font-size:calc(17px*var(--fsc))}
+  .legend{font-size:calc(14.5px*var(--fsc));justify-content:flex-start;flex-wrap:wrap;gap:8px}
+  .tbl{font-size:calc(16px*var(--fsc));table-layout:auto}
+  .tbl col{width:auto!important}
+  .tbl th{font-size:calc(14px*var(--fsc));padding:10px 7px;white-space:normal;line-height:1.35}
+  .tbl td{padding:12px 7px;word-break:break-word}
+  .tbl .nm{font-size:calc(17.5px*var(--fsc));white-space:normal;line-height:1.3}
+  .tbl .cd{font-size:calc(13.5px*var(--fsc))}
+  .tbl .m{font-size:calc(15.5px*var(--fsc))}
+  .tbl .m small{font-size:calc(13px*var(--fsc))}
+  .tbl .why{font-size:calc(14.5px*var(--fsc))}
+  .rr{font-size:calc(14px*var(--fsc))}
+  .rank{width:26px;height:26px;font-size:15px;line-height:26px;border-radius:7px;margin-right:5px;flex:0 0 auto}
+  .method{grid-template-columns:1fr;gap:8px}
+  .method b{font-size:calc(16.5px*var(--fsc))}
+  .method b i{font-size:calc(15px*var(--fsc))}
+  .method span{font-size:calc(15px*var(--fsc))}
+  .pick{grid-template-columns:1fr;gap:14px;padding:16px}
+  .pick .lt{border-right:0;border-bottom:1px dashed var(--rule);padding:0 0 12px}
+  .pick .rk{flex-wrap:wrap}
+  .pick .rk .no{font-size:calc(15px*var(--fsc))}
+  .pick .rk .sec{font-size:calc(15px*var(--fsc))}
+  .pick .nm{font-size:calc(26px*var(--fsc));line-height:1.25}
+  .pick .cd{font-size:calc(14px*var(--fsc))}
+  .pick .px{font-size:calc(19px*var(--fsc))}
+  .pick .px small{font-size:calc(14.5px*var(--fsc))}
+  .pick .sc b{font-size:calc(44px*var(--fsc))}
+  .pick .sc span{font-size:calc(14.5px*var(--fsc))}
+  .pick .hd{font-size:calc(15px*var(--fsc))}
+  .fb>div{grid-template-columns:1fr auto;gap:6px;font-size:calc(16px*var(--fsc))}
+  .fb>div>span:first-child{grid-column:1/2}
+  .fb .bar{grid-column:1/3;height:11px;order:3}
+  .fb em{grid-column:2/3;text-align:right;font-size:calc(15px*var(--fsc))}
+  .pick .wt{font-size:calc(15px*var(--fsc))}
+  .why3>div{grid-template-columns:1fr;gap:4px;font-size:calc(17px*var(--fsc));line-height:1.6}
+  .why3 .k{font-size:calc(15.5px*var(--fsc));padding-top:0}
+  .why3 .k i{display:inline-block;font-size:calc(14px*var(--fsc));margin:0 0 0 6px}
+  .pact{font-size:calc(16.5px*var(--fsc));padding:14px;line-height:1.6}
+  .pact .lb{font-size:calc(13.5px*var(--fsc))}
+  .pnum{grid-template-columns:1fr 1fr;gap:8px}
+  .pnum .k{font-size:calc(14px*var(--fsc))}
+  .pnum .v{font-size:calc(18px*var(--fsc));white-space:normal}
+  .prisk{font-size:calc(15.5px*var(--fsc));line-height:1.6}
+  .autotag{font-size:calc(13.5px*var(--fsc))}
+  .logb{font-size:calc(16.5px*var(--fsc));padding:14px 15px;line-height:1.7}
+  .logb b{font-size:calc(14.5px*var(--fsc))}
+  .chain{grid-template-columns:1fr 1fr;gap:8px}
+  .chain .k{font-size:calc(14.5px*var(--fsc))}
+  .chain .v{font-size:calc(21px*var(--fsc))}
+  .chain .s{font-size:calc(14.5px*var(--fsc))}
+  .mid2{grid-template-columns:1fr;gap:12px}
+  .alloc{padding:16px}
+  .stack{height:34px}
+  .arow{grid-template-columns:16px 1fr auto;font-size:calc(17px*var(--fsc));padding:9px 0}
+  .arow .sw{width:16px;height:16px}
+  .arow .w{font-size:calc(17px*var(--fsc))}
+  .rules{grid-template-columns:1fr;gap:12px}
+  .rule{padding:16px}
+  .rule h4{font-size:calc(19px*var(--fsc));line-height:1.35}
+  .rule p{font-size:calc(17px*var(--fsc));line-height:1.65}
+  .rule .no{font-size:44px}
+  .st{font-size:calc(14.5px*var(--fsc))}
+  .gap{font-size:calc(13.5px*var(--fsc))}
+  .disc{font-size:calc(14px*var(--fsc))}
+  .note{font-size:calc(15.5px*var(--fsc));line-height:1.7}
+  .foot{flex-direction:column;align-items:flex-start;gap:7px;font-size:calc(13.5px*var(--fsc))}
+  .num{letter-spacing:0}
+  /* 글씨 '아주 크게'에서 한 줄에 안 들어가는 것들은 1열로 */
+  html.fs3 .kpis,html.fs3 .kpis.six,html.fs3 .heat,html.fs3 .chain,
+  html.fs3 .pnum,html.fs3 .grid4,html.fs3 .logb .lrow{grid-template-columns:1fr}
+  html.fs3 .msheet .grid5{grid-template-columns:1fr}
+  html.fs3 .msheet .fsrow{grid-template-columns:1fr}
+  html.fs3 .duo{grid-template-columns:1fr}
+  html.fs3 .pick .lt{padding-bottom:14px}
+}
+
+/* ===== v6 신규 블록의 폰 대응 ===== */
+.sband{grid-template-columns:1fr;gap:10px;padding:14px}
+.sband.tw{grid-template-columns:1fr}
+.sband .sl{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sband .sl .lbl{font-size:calc(15px*var(--fsc))}
+.sband .sl .big b{font-size:calc(44px*var(--fsc))}
+.sband .sl .big i{font-size:calc(13px*var(--fsc))}
+.sband .sl .gd{font-size:calc(15px*var(--fsc));margin-top:0}
+.sband .ss{border-left:0;border-top:1px dashed var(--rule);padding:10px 0 0;font-size:calc(14px*var(--fsc));line-height:1.6}
+.zbar{height:auto}
+.zbar .zs{position:static;height:auto;min-height:32px}
+.zbar .zs i{flex-direction:column;gap:0;padding:4px 2px;font-size:calc(12px*var(--fsc));line-height:1.25;text-align:center}
+.zbar .zs i em{font-size:calc(11px*var(--fsc));opacity:.85}
+.zbar .mk{position:static;transform:none;flex-direction:row;gap:7px;margin-top:9px;align-items:center}
+.zbar .mk i{display:none}
+.zbar .mk.now span,.zbar .mk.avg span{font-size:calc(13.5px*var(--fsc));margin:0}
+.zbar .mk.now span{padding:0 8px;line-height:20px}
+.zmsg{font-size:calc(14px*var(--fsc));line-height:1.6;margin-top:8px}
+.rr{grid-template-columns:1fr auto;gap:6px;padding:11px 0}
+.rr .bar{grid-column:1/3;height:13px}
+.rr .m{font-size:calc(16px*var(--fsc))}
+.rr .v{font-size:calc(18px*var(--fsc))}
+.rr .d{grid-column:1/3;font-size:calc(14px*var(--fsc));white-space:normal;line-height:1.5}
+.rate{grid-template-columns:1fr}
+.spread .k{font-size:calc(14px*var(--fsc))}
+.spread .v{font-size:calc(25px*var(--fsc))}
+.spread .s{font-size:calc(14px*var(--fsc));line-height:1.6}
+.panel .ttl{font-size:calc(14.5px*var(--fsc))}
+.panel p.s{font-size:calc(14px*var(--fsc));line-height:1.65}
+.cbT{font-size:calc(15px*var(--fsc))}
+.cbT th{font-size:calc(13.5px*var(--fsc))}
+.cbT td,.cbT th{padding:11px 7px}
+.cbT .r{font-size:calc(16px*var(--fsc))}
+/* 폰에서는 트리맵 대신 읽히는 목록·격자로 */
+.tmblock .tm{display:none}
+.tmblock .top20grid{display:grid}
+.rkg{grid-template-columns:1fr}
+.rkg .rk:nth-child(-n+3){border-top:1px solid var(--rule)}
+.rkg .rk:first-of-type{border-top:0}
+.rk{grid-template-columns:1fr auto;font-size:calc(16px*var(--fsc));padding:9px 0;gap:4px}
+.rk .v{font-size:calc(16px*var(--fsc))}
+.rk .b{height:7px}
+.rank-l .ttl{font-size:calc(14px*var(--fsc));line-height:1.5}
+.insight{font-size:calc(15.5px*var(--fsc));line-height:1.65}
+.two.even{grid-template-columns:1fr}

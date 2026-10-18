@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heeyun's Argon · 데일리 퀀트 카드뉴스</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+:root{
+  --ink:#101318;        /* 그라파이트 바탕 */
+  --plate:#191d24;      /* 강철판 */
+  --plate2:#20262f;
+  --rule:#2d343f;       /* 리벳 라인 */
+  --text:#ebe7df;       /* 웜 화이트 */
+  --mute:#8d96a5;
+  --amber:#f4a62a;      /* 에디슨 필라멘트 */
+  --amber2:#ffcf7a;
+  --argon:#9b8cff;      /* 아르곤 글로우 */
+  --up:#22c55e; --down:#f97316;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#0a0c10;color:var(--text);font-family:'Noto Sans KR',sans-serif;-webkit-font-smoothing:antialiased}
+body{padding:0 0 40px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+/* ---------- 네비게이션 ---------- */
+.nav{position:sticky;top:0;z-index:50;background:rgba(10,12,16,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--rule)}
+.nav-in{width:840px;max-width:100%;margin:0 auto;padding:10px 12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.nav .brand{font-weight:900;font-size:14px;margin-right:auto;color:var(--amber)}
+.nav .brand small{color:var(--mute);font-weight:500;margin-left:6px;font-size:11px}
+.btn{font:700 12px 'Noto Sans KR';color:var(--text);background:var(--plate2);border:1px solid var(--rule);border-radius:8px;padding:7px 10px;cursor:pointer}
+.btn:hover{border-color:var(--amber)}
+.btn:focus-visible{outline:2px solid var(--amber2);outline-offset:2px}
+.btn.pri{background:var(--amber);color:#1a1205;border-color:var(--amber)}
+.live{font:600 11px var(--mono);color:var(--mute);width:100%;display:flex;gap:10px;align-items:center}
+.dot{width:7px;height:7px;border-radius:50%;background:#555;display:inline-block}
+.dot.on{background:var(--up);box-shadow:0 0 8px var(--up)}
+/* ---------- 카드 ---------- */
+.card{width:840px;margin:22px auto 0;background:var(--ink);border:1px solid var(--rule);border-radius:22px;overflow:hidden;position:relative}
+.card::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(600px 220px at 85% -40px,rgba(244,166,42,.16),transparent 70%),radial-gradient(500px 200px at 0% 0%,rgba(155,140,255,.08),transparent 70%)}
+.pad{padding:26px 28px;position:relative}
+.head{display:grid;grid-template-columns:1fr auto;align-items:end;gap:12px;padding-bottom:16px;border-bottom:1px dashed var(--rule)}
+.eyebrow{font:700 12px var(--mono);letter-spacing:.14em;color:var(--amber);text-transform:uppercase}
+.eyebrow b{display:inline-block;background:var(--amber);color:#1a1205;padding:2px 7px;border-radius:5px;margin-right:8px}
+h1{font-size:32px;font-weight:900;letter-spacing:-.03em;line-height:1.15;margin-top:8px}
+h1 em{font-style:normal;color:var(--amber2)}
+.stamp{text-align:right;font:600 11px/1.6 var(--mono);color:var(--mute)}
+.stamp strong{color:var(--text);font-size:13px;display:block}
+h2{font-size:17px;font-weight:900;margin:22px 0 10px;display:flex;align-items:center;gap:8px;letter-spacing:-.02em}
+h2::before{content:"";width:4px;height:17px;background:var(--amber);border-radius:2px}
+h2 small{font-weight:500;color:var(--mute);font-size:12px;margin-left:auto}
+/* ---------- 상단 3단 (Flexbox 붕괴 방지: 고정 grid) ---------- */
+.top3{display:grid;grid-template-columns:180px 240px 1fr;gap:12px;margin-top:18px}
+.gauge{background:var(--plate);border:1px solid var(--rule);border-radius:16px;padding:14px;text-align:center;min-width:0}
+.gauge .lbl{font-size:12px;font-weight:700;color:var(--mute);white-space:nowrap}
+.dial{position:relative;width:132px;height:132px;margin:8px auto 4px}
+.dial svg{width:132px;height:132px;transform:rotate(-90deg)}
+.dial .v{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dial .v span{font:700 40px var(--mono);letter-spacing:-.05em;line-height:1}
+.dial .v i{font-style:normal;font:600 11px var(--mono);color:var(--mute)}
+.grade{font-size:12px;font-weight:700;white-space:nowrap}
+.gauge.dual .dial{width:76px;height:76px;margin:6px auto 0}
+.gauge.dual .dial svg{width:76px;height:76px}
+.gauge.dual .dial .v span{font-size:24px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.duo .lbl{font-size:11px}
+.parts{background:var(--plate);border:1px solid var(--rule);border-radius:16px;padding:12px 14px;min-width:0}
+.parts .ttl{font-size:12px;font-weight:700;color:var(--mute);margin-bottom:6px}
+.prow{display:grid;grid-template-columns:1fr 52px;gap:6px;align-items:center;font-size:12px;margin-top:7px}
+.prow .bar{grid-column:1/3;height:5px;background:#0d1015;border-radius:3px;overflow:hidden}
+.prow .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--amber2))}
+.prow .s{text-align:right;font:600 12px var(--mono);color:var(--amber2)}
+.diag{background:var(--plate);border:1px solid var(--rule);border-radius:16px;padding:12px 14px;min-width:0}
+.diag .ttl{font-size:12px;font-weight:700;color:var(--mute);margin-bottom:4px}
+.cause{display:grid;grid-template-columns:62px 1fr;gap:8px;padding:7px 0;border-top:1px solid var(--rule);font-size:13px;line-height:1.5}
+.cause:first-of-type{border-top:0}
+.cause b{font:700 11px var(--mono);color:#1a1205;background:var(--amber);border-radius:5px;text-align:center;height:20px;line-height:20px}
+.cause.w b{background:#3b3f4a;color:var(--amber2)} .cause.a b{background:var(--argon);color:#120e2a}
+/* ---------- KPI ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.kpis.six{grid-template-columns:repeat(3,1fr)}
+.kpi{background:var(--plate);border:1px solid var(--rule);border-radius:14px;padding:12px 14px;min-width:0}
+.kpi .k{font-size:12px;color:var(--mute);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v{font:700 21px var(--mono);margin-top:4px;white-space:nowrap;letter-spacing:-.03em}
+.kpi .s{font-size:11.5px;color:var(--mute);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.up{color:var(--up)} .dn{color:var(--down)} .fl{color:var(--mute)}
+/* ---------- 매크로 블록 ---------- */
+.vars{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.vbox{background:var(--plate);border:1px solid var(--rule);border-radius:14px;padding:14px;min-width:0;display:flex;flex-direction:column}
+.vbox .t{font-size:15px;font-weight:900}
+.vbox .tag{display:inline-block;margin-top:6px;font:600 11px var(--mono);color:var(--amber2);border:1px solid rgba(244,166,42,.4);border-radius:20px;padding:2px 8px;align-self:flex-start}
+.vbox p{font-size:12.5px;line-height:1.62;color:#cdd2da;margin-top:8px;flex:1}
+.vbox .k{margin-top:10px;font-size:12px;font-weight:700;color:var(--argon);border-top:1px dashed var(--rule);padding-top:8px}
+.trend .st{font-size:12px;color:var(--amber2);font-weight:700;margin-top:4px}
+.secT{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px;background:var(--plate);border:1px solid var(--rule);border-radius:14px;overflow:hidden}
+.secT th,.secT td{padding:10px 12px;text-align:left;border-top:1px solid var(--rule);line-height:1.5;vertical-align:top}
+.secT thead th{border-top:0;background:var(--plate2);font-size:12px;color:var(--mute)}
+.secT td:first-child{font-weight:900;width:110px;white-space:nowrap}
+/* ---------- 4×5 고정 그리드 히트맵 ---------- */
+.heat{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tile{height:76px;border-radius:10px;border:1.5px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-width:0;padding:0 6px;overflow:hidden}
+.tile .n{font-size:13.5px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.3}
+.tile .c{font:600 10.5px var(--mono);opacity:.75;line-height:1.3}
+.tile .p{font:700 12px var(--mono);white-space:nowrap;line-height:1.4}
+.t-su{background:#047857;border-color:#10b981}.t-u{background:#15803d;border-color:#22c55e}.t-f{background:#334155;border-color:#64748b}
+.t-d{background:#c2410c;border-color:#f97316}.t-sd{background:#9a3412;border-color:#ea580c}
+.legend{display:flex;gap:10px;justify-content:flex-end;font-size:11px;color:var(--mute);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+/* ---------- 액션 플랜 표 ---------- */
+.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;background:var(--plate);border:1px solid var(--rule);border-radius:14px;overflow:hidden;table-layout:fixed}
+.tbl th{background:var(--plate2);color:var(--mute);font-size:11px;font-weight:700;padding:8px 6px;text-align:right;white-space:nowrap}
+.tbl td{padding:8px 6px;border-top:1px solid var(--rule);text-align:right;vertical-align:middle}
+.tbl th:first-child,.tbl td:first-child{text-align:left;padding-left:12px}
+.tbl th:last-child,.tbl td:last-child{text-align:left;padding-right:12px}
+.tbl .nm{font-weight:900;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbl .cd{font:600 10px var(--mono);color:var(--mute)}
+.tbl .m{font:600 11.5px var(--mono);white-space:nowrap}
+.tbl .m small{display:block;font-size:10px;color:var(--mute)}
+.tbl .ent{color:var(--amber2)}
+.tbl .tp{color:var(--up)} .tbl .sl{color:var(--down)}
+.rr{display:inline-block;font:700 10.5px var(--mono);background:rgba(155,140,255,.16);color:var(--argon);border-radius:5px;padding:1px 5px;margin-top:2px}
+.tbl .why{font-size:11px;line-height:1.45;color:#c9ced6}
+.rank{display:inline-block;width:18px;height:18px;border-radius:5px;background:#2b313b;color:var(--amber2);font:700 10.5px/18px var(--mono);text-align:center;margin-right:6px;vertical-align:1px}
+.note{font-size:11px;color:var(--mute);line-height:1.6;margin-top:10px}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding-top:12px;border-top:1px dashed var(--rule);font:600 10.5px var(--mono);color:var(--mute)}
+.foot b{color:var(--amber)}
+/* ---------- 크립토 온체인 ---------- */
+.chain{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.chain>div{background:var(--plate2);border:1px solid var(--rule);border-radius:12px;padding:10px 12px;min-width:0}
+.chain .k{font-size:11px;color:var(--mute);font-weight:700}
+.chain .v{font:700 16px var(--mono);margin-top:2px;color:var(--argon)}
+.chain .s{font-size:11px;color:#c3c8d0;margin-top:2px;line-height:1.4}
+/* ---------- Argon ---------- */
+.mid2{display:grid;grid-template-columns:330px 1fr;gap:12px}
+.alloc{background:var(--plate);border:1px solid var(--rule);border-radius:16px;padding:14px}
+.stack{display:flex;height:26px;border-radius:8px;overflow:hidden;margin:8px 0 12px}
+.stack i{display:block;height:100%}
+.arow{display:grid;grid-template-columns:12px 1fr 58px;gap:8px;align-items:center;font-size:12.5px;padding:5px 0;border-top:1px solid var(--rule)}
+.arow:first-of-type{border-top:0}
+.arow .sw{width:12px;height:12px;border-radius:3px}
+.arow .w{text-align:right;font:700 12.5px var(--mono)}
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rule{background:var(--plate);border:1px solid var(--rule);border-radius:14px;padding:13px 14px;position:relative;overflow:hidden}
+.rule .no{font:700 30px var(--mono);color:rgba(244,166,42,.18);position:absolute;right:10px;top:2px}
+.rule h4{font-size:14px;font-weight:900;color:var(--amber2);padding-right:40px}
+.rule p{font-size:12px;line-height:1.55;color:#c9ced6;margin-top:6px}
+.st{display:inline-block;font-size:10.5px;font-weight:700;border-radius:5px;padding:2px 6px;white-space:nowrap}
+.st.wait{background:#2b313b;color:var(--amber2)} .st.hit{background:#047857;color:#eafff3}
+.gap{font:600 10px var(--mono);color:var(--mute);display:block;margin-top:2px}
+.disc{font-size:10.5px;color:#6b7381;line-height:1.6;margin-top:10px}
+@media (max-width:860px){.card{border-radius:0;border-left:0;border-right:0}}
+@media (prefers-reduced-motion:no-preference){.prow .bar i{transition:width .8s ease}}
+.only .nav{display:none}.only .card{margin-top:0}.only body,.only{padding:0}
+</style>
+</head>
+<body>
+<div class="nav" id="nav"><div class="nav-in">
+  <div class="brand">HEEYUN'S ARGON<small>데일리 퀀트 데스크</small></div>
+  <div class="dact">
+    <button class="btn" onclick="saveCard(1)">1번 저장</button>
+    <button class="btn" onclick="saveCard(2)">2번 저장</button>
+    <button class="btn" onclick="saveCard(3)">3번 저장</button>
+    <button class="btn" onclick="saveCard(4)">4번 저장</button>
+    <button class="btn" onclick="saveCard(5)">5번 저장</button>
+    <a class="btn" href="check.html" style="text-decoration:none;border-color:var(--amber);color:var(--amber2)">🔍 종목 점수 조회</a>
+    <button class="btn pri" onclick="downloadAllSequential()">전체 저장</button>
+    <button class="btn" onclick="copyKakao()">카톡 요약 복사</button>
+  </div>
+  <button class="fopen" id="fopen" type="button" aria-label="글씨 크기 바꾸기">가</button>
+  <button class="mopen" id="mopen" aria-expanded="false" aria-controls="msheet">☰ 저장 · 도구</button>
+  <div class="live"><span class="dot" id="ldot"></span><span id="lmsg">크립토 실시간 연결 준비 중</span>
+    <button class="btn" style="margin-left:auto;padding:4px 8px" onclick="refreshLive()">지금 갱신</button></div>
+</div></div>
+<div class="msheet" id="msheet" role="dialog" aria-modal="true" aria-label="저장 및 도구">
+  <div class="mp">
+    <div class="bar"></div>
+    <div class="mh">저장 &amp; 도구</div>
+    <div class="ms" id="mlive">크립토 실시간 연결 준비 중</div>
+    <div class="grid5">
+      <button onclick="saveCard(1)">1번 저장</button>
+      <button onclick="saveCard(2)">2번 저장</button>
+      <button onclick="saveCard(3)">3번 저장</button>
+      <button onclick="saveCard(4)">4번 저장</button>
+      <button onclick="saveCard(5)">5번 저장</button>
+      <button class="pri" onclick="downloadAllSequential()">전체 저장</button>
+    </div>
+    <div class="mg">
+      <a class="mb go" href="check.html">🔍 종목 점수 조회 · 4,450개</a>
+      <button onclick="copyKakao()">📋 카톡 요약 복사</button>
+      <button onclick="refreshLive()">🔄 지금 갱신</button>
+      <button onclick="__mnavClose()">닫기</button>
+    </div>
+    <div class="lbl">글씨 크기</div>
+    <div class="fsrow">
+      <button class="fsbtn" data-fs="1" type="button">보통</button>
+      <button class="fsbtn" data-fs="2" type="button">크게</button>
+      <button class="fsbtn" data-fs="3" type="button">아주 크게</button>
+    </div>
+    <div class="note">카드를 저장하면 이 폰 화면 크기에 맞춘 이미지로 내려받아요. 카톡·인스타에 그대로 붙여넣으면 됩니다. (PC에서 저장하면 원래대로 840px 카드)</div>
+  </div>
+</div>
+<script>
+(function(){
+  function mm(){return document.getElementById('mopen')}
+  function open(){document.body.classList.add('mshow');var b=mm();if(b)b.setAttribute('aria-expanded','true')}
+  function close(){document.body.classList.remove('mshow');var b=mm();if(b)b.setAttribute('aria-expanded','false')}
+  window.__mnavClose=close;
+  document.addEventListener('click',function(e){
+    var b=mm(); if(b&&b.contains(e.target)){document.body.classList.contains('mshow')?close():open();return}
+    var sh=document.getElementById('msheet'); if(!sh) return;
+    if(e.target===sh){close();return}
+    if(sh.contains(e.target)&&e.target.closest('button,a')&&!e.target.closest('.fsbtn')){setTimeout(close,80)}
+  },true);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close()});
+  var lm=document.getElementById('lmsg'),ml=document.getElementById('mlive');
+  if(lm&&ml&&window.MutationObserver){new MutationObserver(function(){ml.textContent=lm.textContent}).observe(lm,{childList:true,subtree:true,characterData:true})}
+})();
+</script>
+<div id="root"></div>
+<script>
+const DATA=/*__DATA__*/null;
+const ONLY=/*__ONLY__*/0;
+const LIVE=/*__LIVE__*/true;
+if(ONLY) document.documentElement.classList.add('only');
+const $=s=>document.querySelector(s);
+const FX=DATA.meta.fx;
+/* ---------- 포맷 ---------- */
+function fmt(v,mk){
+  if(v==null) return '-';
+  if(mk==='KR') return Math.round(v).toLocaleString('ko-KR')+'원';
+  if(mk==='US') return '$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const a=Math.abs(v); let dg=a>=1000?0:a>=100?2:a>=1?3:a>=0.01?4:8;
+  if(a<0.001) return '$'+v.toFixed(8).replace(/0+$/,'');
+  return '$'+v.toLocaleString('en-US',{minimumFractionDigits:Math.min(dg,2),maximumFractionDigits:dg});
+}
+const pct=v=>v==null?'':(v>0?'+':'')+v.toFixed(2)+'%';
+const cls=v=>v>0?'up':v<0?'dn':'fl';
+function tcls(c){return c>=2.5?'t-su':c>0?'t-u':c===0?'t-f':c>-2.5?'t-d':'t-sd'}
+function grade(s){return s>=70?['강세 구간','var(--up)']:s>=55?['선별 매수 구간','var(--amber2)']:s>=40?['경계 구간','var(--amber)']:['방어 우선 구간','var(--down)']}
+function dial(s,big=true){const r=big?56:32,sz=big?132:76,c=2*Math.PI*r,g=grade(s);
+  return `<div class="dial"><svg viewBox="0 0 ${sz} ${sz}"><circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="#0d1015" stroke-width="${big?12:8}"/>
+  <circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="${g[1]}" stroke-width="${big?12:8}" stroke-linecap="round" stroke-dasharray="${c*s/100} ${c}"/></svg>
+  <div class="v"><span class="num" style="color:${g[1]}">${s}</span><i>/ 100</i></div></div>`}
+function head(no,eng,title,sub){return `<div class="head"><div><div class="eyebrow"><b>${no}/5</b>${eng}</div><h1>${title}</h1></div>
+  <div class="stamp"><strong>${DATA.meta.date}</strong>${DATA.meta.edition}<br>${sub||DATA.meta.mode}</div></div>`}
+function parts(p,ttl){return `<div class="parts"><div class="ttl">${ttl||'점수는 이렇게 매겼어요'}</div>${p.map(([n,m,s])=>`<div class="prow"><span>${n}</span><span class="s">${s}${m?'/'+m:'+'}</span><div class="bar"><i style="width:${m?s/m*100:100}%"></i></div></div>`).join('')}</div>`}
+function diag(rows,ttl){return `<div class="diag"><div class="ttl">${ttl||'퀀트 데스크 3줄 진단'}</div>${rows.map(([k,t],i)=>`<div class="cause ${['','w','a'][i]}"><b>${k}</b><span>${t}</span></div>`).join('')}</div>`}
+function top3(score,label,p,dg){const g=grade(score);return `<div class="top3"><div class="gauge"><div class="lbl">${label}</div>${dial(score)}<div class="grade" style="color:${g[1]}">${g[0]}</div></div>${parts(p)}${diag(dg)}</div>`}
+function heat(list,id){return `<div class="heat" id="${id}">${list.map(h=>tile(h)).join('')}</div>
+ <div class="legend"><span><i style="background:#047857"></i>+2.5%↑</span><span><i style="background:#15803d"></i>상승</span><span><i style="background:#334155"></i>보합</span><span><i style="background:#c2410c"></i>하락</span><span><i style="background:#9a3412"></i>-2.5%↓</span></div>`}
+function tile(h){return `<div class="tile ${tcls(h.chg)}" data-code="${h.code}"><div class="n">${h.name}</div><div class="c">${h.code}</div><div class="p">${fmt(h.price,h.mk)} (${pct(h.chg)})</div></div>`}
+function table(rows,kind){
+  const hdr=`<colgroup><col style="width:128px"><col style="width:92px"><col style="width:82px"><col style="width:92px"><col style="width:86px"><col></colgroup>
+  <thead><tr><th>${kind==='CR'?'자산명(심볼)':'종목명(코드)'}</th><th>현재가(등락)</th><th>진입 매수가</th><th>목표가 1차/2차</th><th>손절가(손익비)</th><th>${kind==='CR'?'온체인·파생 근거':'핵심 퀀트 & 수급 사유'}</th></tr></thead>`;
+  return `<table class="tbl">${hdr}<tbody>${rows.map((r,i)=>`<tr data-code="${r.code}">
+   <td><div class="nm"><span class="rank">${i+1}</span>${r.name}</div><div class="cd" style="padding-left:24px">${r.code}</div></td>
+   <td class="m"><span class="px">${fmt(r.price,r.mk)}</span><small class="${cls(r.chg)} pc">${pct(r.chg)}</small></td>
+   <td class="m ent">${fmt(r.entry,r.mk)}<small>지정가</small></td>
+   <td class="m tp">${fmt(r.tp1,r.mk)}<small>${fmt(r.tp2,r.mk)}</small></td>
+   <td class="m sl">${fmt(r.sl,r.mk)}<br><span class="rr">1 : ${r.rr.toFixed(1)}</span></td>
+   <td class="why">${r.reason}</td></tr>`).join('')}</tbody></table>`}
+function foot(n){return `<div class="foot"><span><b>HEEYUN'S ARGON</b> · 데일리 퀀트 카드뉴스 #${n}</span><span>${DATA.meta.asof}</span></div>`}
+
+/* ---------- 카드 1 ---------- */
+function card1(){const m=DATA.mac;return `<section class="card" id="card1"><div class="pad">
+ ${head(1,'Global Macro','오늘 세계 시장을 움직인 <em>세 개의 레버</em>')}
+ <div class="top3"><div class="gauge"><div class="lbl">글로벌 매크로 점수</div>${dial(m.score)}<div class="grade" style="color:${grade(m.score)[1]}">${grade(m.score)[0]}</div></div>
+ ${parts(m.parts)}${diag(m.diag,'오늘의 인과관계 3줄 요약')}</div>
+ <div class="kpis">${m.kpis.map(([k,v,s])=>`<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('')}</div>
+ <h2>3대 거시 변수<small>원인 → 연쇄 효과</small></h2>
+ <div class="vars">${m.vars.map(v=>`<div class="vbox"><div class="t">${v.t}</div><span class="tag">${v.tag}</span><p>${v.b}</p><div class="k">→ ${v.k}</div></div>`).join('')}</div>
+ <h2>3대 산업 메가트렌드<small>AI · 전력 · 전기차</small></h2>
+ <div class="vars">${m.trends.map(v=>`<div class="vbox trend"><div class="t">${v.t}</div><div class="st">${v.st}</div><p>${v.b}</p><div class="k">${v.sig}</div></div>`).join('')}</div>
+ <h2>수혜 섹터 vs 회피 섹터<small>미국 강세 ↔ 한국 선별</small></h2>
+ <table class="secT"><thead><tr><th>시장</th><th class="up">돈이 들어가는 곳 (수혜)</th><th class="dn">돈이 빠지는 곳 (회피)</th></tr></thead><tbody>
+ <tr><td>🇺🇸 미국 · 방어 순환</td><td>${m.sectors.us.good}</td><td>${m.sectors.us.bad}</td></tr>
+ <tr><td>🇰🇷 한국 · 선별</td><td>${m.sectors.kr.good}</td><td>${m.sectors.kr.bad}</td></tr></tbody></table>
+ <p class="note">연결 고리: 미국에서 반도체가 팔리면 같은 날 한국 반도체도 외국인 매도가 따라오고, 미국에서 헬스케어·조선 동맹주가 사지면 한국 바이오·조선으로 기관 돈이 이어집니다.</p>
+ ${foot(1)}</div></section>`}
+/* ---------- 카드 2 ---------- */
+function kpiRow(k){return k.map(([n,v,c])=>`<div class="kpi"><div class="k">${n}</div><div class="v">${v}</div><div class="s ${c==null?'':cls(c)}">${c==null?'&nbsp;':pct(c)}</div></div>`).join('')}
+function card2(){const u=DATA.us;return `<section class="card" id="card2"><div class="pad">
+ ${head(2,'US Market Intelligence','미국 증시 · <em>기술주에서 방어주로</em>','10/16(금) 본장 마감 · 주말 휴장')}
+ ${top3(u.score,'미국 시장 컨디션',u.parts,u.diag)}
+ <div class="kpis six">${kpiRow(u.kpis)}</div>
+ <h2>20대 기업 자금 흐름<small>금요일 등락률 · 4×5 고정 그리드</small></h2>
+ ${heat(u.heat,'h-us')}
+ <h2>Top 10 액션 플랜<small>전부 지정가 · 손익비 1:2.5 이상만</small></h2>
+ ${table(u.top,'US')}
+ <p class="note">진입가 = 현재가에서 하루 평균 흔들림(ATR)의 0.6~1배 아래 눌림 자리. 손절가 = 최근 20일 바닥 또는 진입가 −1~1.6 ATR. 체결 안 되면 그날은 '안 사는 게 수익'입니다.</p>
+ ${foot(2)}</div></section>`}
+/* ---------- 카드 3 ---------- */
+function card3(){const k=DATA.kr,g1=grade(k.score),g2=grade(k.score2);return `<section class="card" id="card3"><div class="pad">
+ ${head(3,'KR Market Intelligence','한국 증시 · <em>서킷브레이커 다음 날</em>','10/16(금) 마감 복기 · 주말 휴장')}
+ <div class="top3"><div class="gauge dual"><div class="lbl">한국 시장 컨디션</div><div class="duo">
+   <div><div class="lbl">코스피</div>${dial(k.score,false)}<div class="grade" style="color:${g1[1]};font-size:11px">${g1[0]}</div></div>
+   <div><div class="lbl">코스닥</div>${dial(k.score2,false)}<div class="grade" style="color:${g2[1]};font-size:11px">${g2[0]}</div></div></div></div>
+ ${parts(k.parts,'코스피 점수 산식')}${diag(k.diag)}</div>
+ <div class="kpis">${kpiRow(k.kpis)}</div>
+ <h2>20대 기업 자금 흐름<small>금요일 등락률 · 4×5 고정 그리드</small></h2>
+ ${heat(k.heat,'h-kr')}
+ <h2>Top 10 실전 가격표<small>지정가 · 호가 단위 반영</small></h2>
+ ${table(k.top,'KR')}
+ <p class="note">수급 근거: 한국거래소 10/12~16 주간 순매수 상위(주간동아 정리). 외국인은 반도체를, 기관은 하이닉스·LG엔솔·KB금융·삼바·현대차를 샀습니다. 공포 심리로 기업 가치 대비 지나치게 싸게 팔리는 '과매도' 종목은 한 번에 사지 말고 1/3씩 나눠 그물을 칩니다.</p>
+ ${foot(3)}</div></section>`}
+/* ---------- 카드 4 ---------- */
+function card4(){const c=DATA.cr;return `<section class="card" id="card4"><div class="pad">
+ ${head(4,'Crypto Market Intelligence','크립토 · <em>박스권 안의 롱 쏠림</em>','24시간 실시간 · 주말 집중 모드')}
+ ${top3(c.score,'크립토 컨디션',c.parts,c.diag)}
+ <div class="kpis" id="crk">${c.kpis.map(([n,v,s])=>typeof v==='number'?`<div class="kpi"><div class="k">${n}</div><div class="v" data-k="${s}">${fmt(v,'CR')}</div><div class="s ${cls(DATA.cr.heat.find(h=>h.code===s).chg)}" data-kc="${s}">24시간 ${pct(DATA.cr.heat.find(h=>h.code===s).chg)}</div></div>`:`<div class="kpi"><div class="k">${n}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('')}</div>
+ <div class="chain">${c.onchain.map(([k,v,s])=>`<div><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('')}</div>
+ <h2>20대 코인 자금 흐름<small>24시간 등락률 · 실시간</small></h2>
+ ${heat(c.heat,'h-cr')}
+ <h2>Top 10 매매 타점<small>지정가 · 손익비 1:2.5 이상</small></h2>
+ ${table(c.top,'CR')}
+ <p class="note">펀딩비 = 선물에서 '오른다'에 건 쪽이 '내린다'에 건 쪽에 내는 이자. 플러스가 크면 과열, 마이너스면 하락 베팅 쏠림입니다. 롱 계좌 비율이 1주 새 크게 올라, 한 번 흔들어 털고 가는 급락(휩쏘)이 나올 수 있어 손절선은 반드시 지정해 둡니다.</p>
+ ${foot(4)}</div></section>`}
+/* ---------- 카드 5 ---------- */
+const PAL=['#3b4250','#f4a62a','#ffcf7a','#9b8cff','#6ee7b7','#38bdf8','#f472b6','#a3e635'];
+function card5(){const a=DATA.ar,res=a.reserved,cashW=(1e7-res)/1e7*100;
+ return `<section class="card" id="card5"><div class="pad">
+ ${head(5,"Heeyun's Argon · Virtual Portfolio",'1,000만 원 실전 가상계좌 <em>Day 0</em>','운용 개시 · 전 포지션 지정가 대기')}
+ <div class="kpis" id="arK">
+  <div class="kpi"><div class="k">초기 원금</div><div class="v">10,000,000</div><div class="s">2026.10.17 개시</div></div>
+  <div class="kpi"><div class="k">현재 총 평가자산</div><div class="v" id="arTot">10,000,000</div><div class="s" id="arTotS">수익률 0.00% · 체결 0건</div></div>
+  <div class="kpi"><div class="k">투자 예약금액(비중)</div><div class="v">${Math.round(res).toLocaleString()}</div><div class="s">${(res/1e7*100).toFixed(1)}% · 지정가 그물</div></div>
+  <div class="kpi"><div class="k">보유 현금(비중)</div><div class="v">${Math.round(1e7-res).toLocaleString()}</div><div class="s">${cashW.toFixed(1)}% · 예비 탄약 상시</div></div></div>
+ <h2>자산 배분 맵 & 4대 운용 철칙</h2>
+ <div class="mid2"><div class="alloc"><div class="ttl" style="font-size:12px;color:var(--mute);font-weight:700">목표 비중 (원화 환산 · 환율 ${FX.toFixed(1)}원)</div>
+  <div class="stack">${a.alloc.map((x,i)=>`<i style="width:${x.w}%;background:${PAL[i]}"></i>`).join('')}</div>
+  ${a.alloc.map((x,i)=>`<div class="arow"><span class="sw" style="background:${PAL[i]}"></span><span>${x.name}</span><span class="w">${x.w.toFixed(1)}%</span></div>`).join('')}</div>
+  <div class="rules">${a.rules.map(([h,p],i)=>`<div class="rule"><span class="no num">0${i+1}</span><h4>${h}</h4><p>${p}</p></div>`).join('')}</div></div>
+ <h2>포지션 원장<small>체결 시 1차 목표 50% 익절 → 손절선 매수가로 상향</small></h2>
+ <table class="tbl" id="ledger"><colgroup><col style="width:112px"><col style="width:84px"><col style="width:84px"><col style="width:96px"><col style="width:96px"><col style="width:92px"><col></colgroup>
+ <thead><tr><th>자산</th><th>주문상태</th><th>매수단가</th><th>수량 · 금액</th><th>목표가 1차/2차</th><th>손절가(손익비)</th><th>핵심 운용 근거</th></tr></thead><tbody>
+ ${a.ledger.map(x=>`<tr data-code="${x.code}"><td><div class="nm">${x.name}</div><div class="cd">${x.code} · ${x.w.toFixed(1)}%</div></td>
+  <td><span class="st wait">${x.status}</span><span class="gap"></span></td>
+  <td class="m ent">${fmt(x.entry,x.mk)}</td>
+  <td class="m">${x.mk==='CR'?x.qty:x.qty.toLocaleString()}${x.mk==='CR'?'개':'주'}<small>${x.amt.toLocaleString()}원</small></td>
+  <td class="m tp">${fmt(x.tp1,x.mk)}<small>${fmt(x.tp2,x.mk)}</small></td>
+  <td class="m sl">${fmt(x.sl,x.mk)}<br><span class="rr">1 : ${x.rr.toFixed(1)}</span></td>
+  <td class="why">${x.why}</td></tr>`).join('')}
+  <tr><td><div class="nm">현금</div><div class="cd">KRW</div></td><td><span class="st hit">보유</span></td><td class="m">-</td><td class="m">${Math.round(1e7-res).toLocaleString()}원</td><td class="m">-</td><td class="m">-</td><td class="why">급락 시 2차 그물용 예비 탄약 (철칙 02)</td></tr>
+ </tbody></table>
+ <p class="disc">가상계좌 · 실제 투자 권유 아님. 해외자산은 진입가 × 환율 ${FX.toFixed(1)}원으로 원화 환산. 체결 판정: 크립토는 실시간 가격, 주식은 다음 거래일 장중 가격 기준. 출처: ${DATA.sources.join(' · ')}</p>
+ ${foot(5)}</div></section>`}
+
+const builders=[card1,card2,card3,card4,card5];
+$('#root').innerHTML = ONLY ? builders[ONLY-1]() : builders.map(f=>f()).join('');
+
+/* ---------- 크립토 실시간 갱신 (CoinGecko, 60초) ---------- */
+let lastLive=null;
+async function refreshLive_v1(){
+  if(!$('#card4')&&!$('#card5')) return;
+  const ids=[...new Set(Object.values(DATA.meta.idmap))].join(',');
+  try{
+    const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json(); const P={};
+    for(const [sym,id] of Object.entries(DATA.meta.idmap)) if(j[id]) P[sym]={p:j[id].usd,c:+(j[id].usd_24h_change||0).toFixed(2)};
+    DATA.cr.heat.forEach(h=>{if(P[h.code]){h.price=P[h.code].p;h.chg=P[h.code].c}});
+    const hc=$('#h-cr'); if(hc) hc.innerHTML=DATA.cr.heat.map(tile).join('');
+    document.querySelectorAll('#card4 .tbl tr[data-code]').forEach(tr=>{const q=P[tr.dataset.code];if(!q)return;
+      tr.querySelector('.px').textContent=fmt(q.p,'CR');const pc=tr.querySelector('.pc');pc.textContent=pct(q.c);pc.className='pc '+cls(q.c)});
+    document.querySelectorAll('#crk [data-k]').forEach(el=>{const q=P[el.dataset.k];if(q)el.textContent=fmt(q.p,'CR')});
+    document.querySelectorAll('#crk [data-kc]').forEach(el=>{const q=P[el.dataset.kc];if(q){el.textContent='24시간 '+pct(q.c);el.className='s '+cls(q.c)}});
+    // Argon 원장: 크립토 지정가 도달 여부 표시
+    document.querySelectorAll('#ledger tr[data-code]').forEach(tr=>{const x=DATA.ar.ledger.find(l=>l.code===tr.dataset.code);const q=P[x.code];if(!q||x.mk!=='CR')return;
+      const g=(q.p/x.entry-1)*100, st=tr.querySelector('.st'), gp=tr.querySelector('.gap');
+      if(q.p<=x.entry){st.textContent='가격 도달';st.className='st hit'} gp.textContent=`현재가 ${fmt(q.p,'CR')} · 진입까지 ${g>0?'-':''}${Math.abs(g).toFixed(1)}%`});
+    lastLive=new Date(); $('#ldot').classList.add('on');
+    $('#lmsg').textContent=`크립토 실시간 · ${lastLive.toLocaleTimeString('ko-KR')} 갱신 (60초 자동) · 주식은 ${DATA.meta.asof.split('·')[0].replace('미국·한국 주식:','').trim()}`;
+  }catch(e){$('#ldot').classList.remove('on');$('#lmsg').textContent='실시간 연결 실패('+e.message+') · 발행 시점 데이터 표시 중';}
+}
+if(LIVE && !ONLY){refreshLive(); setInterval(refreshLive,60000);} else {$('#lmsg') && ($('#lmsg').textContent='발행 시점 스냅샷');}
+
+/* ---------- 모바일 화면 맞춤 ---------- */
+function fitMobile(){if(ONLY)return;const w=window.innerWidth;document.body.style.zoom=w<860?(w/842).toFixed(3):'';}
+window.addEventListener('resize',fitMobile);fitMobile();
+/* ---------- 저장 엔진 ---------- */
+async function saveCard(n){
+  const el=document.getElementById('card'+n); if(!el) return;
+  await document.fonts.ready;
+  const z=document.body.style.zoom; document.body.style.zoom='';
+  const cv=await html2canvas(el,{scale:2,backgroundColor:'#101318',useCORS:true,logging:false});
+  document.body.style.zoom=z;
+  const a=document.createElement('a'); a.download=`argon_${DATA.meta.date.slice(0,10).replace(/\./g,'')}_card${n}.png`;
+  a.href=cv.toDataURL('image/png'); document.body.appendChild(a); a.click(); a.remove();
+}
+async function downloadAllSequential(){
+  for(let n=1;n<=5;n++){ await saveCard(n); await new Promise(r=>setTimeout(r,600)); }
+}
+function copyKakao(){
+  const t=document.getElementById('kakao')?.textContent||'';
+  navigator.clipboard.writeText(t).then(()=>alert('카톡 요약본이 복사됐어요. 카톡에 붙여넣기 하세요.'));
+}
+</script>
+<script type="text/plain" id="kakao">/*__KAKAO__*/</script>
+<script>
+(function(){
+ var KEY='argonFS';
+ function cur(){try{var v=+(localStorage.getItem(KEY)||2);return (v>=1&&v<=3)?v:2}catch(e){return 2}}
+ function apply(n){
+   var h=document.documentElement;
+   h.classList.remove('fs1','fs2','fs3');h.classList.add('fs'+n);
+   document.querySelectorAll('.fsbtn').forEach(function(x){x.classList.toggle('on',(+x.dataset.fs)===n)});
+   try{localStorage.setItem(KEY,n)}catch(e){}
+ }
+ apply(cur());
+ var b=document.getElementById('fopen')||document.getElementById('fbtn');
+ if(b)b.addEventListener('click',function(e){e.stopPropagation();apply(cur()%3+1)});
+ document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('.fsbtn');if(t)apply(+t.dataset.fs)},false);
+ window.__setFS=apply;
+})();
+</script>
+</body>
+</html>
