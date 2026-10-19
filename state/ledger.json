@@ -64,7 +64,8 @@
    "budget_krw": 1112769,
    "filled_qty": 0,
    "fill_date": null,
-   "realized_krw": 0
+   "realized_krw": 0,
+   "last_eval": "2026-10-19"
   },
   {
    "id": "ORCL-20261017",
@@ -84,7 +85,8 @@
    "budget_krw": 806336,
    "filled_qty": 0,
    "fill_date": null,
-   "realized_krw": 0
+   "realized_krw": 0,
+   "last_eval": "2026-10-19"
   },
   {
    "id": "SOL-20261017",
@@ -135,5 +137,5 @@
    "t": "계좌 개설 · 지정가 6건 예약"
   }
  ],
- "last_run": "2026-10-19T09:12"
+ "last_run": "2026-10-20T01:50"
 }
