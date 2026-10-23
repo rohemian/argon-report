@@ -11,7 +11,7 @@
    "mk": "KR",
    "sym": "005930.KS",
    "created": "2026-10-17",
-   "status": "pending",
+   "status": "open",
    "entry": 205000,
    "qty": 9,
    "tp1": 248500,
@@ -20,10 +20,13 @@
    "rr": 3.5,
    "why": "외국인 투매 끝물 확인용 깊은 그물 · 1차 목표 도달 시 50% 익절",
    "budget_krw": 1845000,
-   "filled_qty": 0,
-   "fill_date": null,
+   "filled_qty": 9,
+   "fill_date": "2026-10-23",
    "realized_krw": 0,
-   "last_eval": "2026-10-22"
+   "last_eval": "2026-10-23",
+   "open_qty": 9,
+   "stop": 192400,
+   "fx_fill": 1324.800048828125
   },
   {
    "id": "000660-20261017",
@@ -32,7 +35,7 @@
    "mk": "KR",
    "sym": "000660.KS",
    "created": "2026-10-17",
-   "status": "pending",
+   "status": "open",
    "entry": 1199000,
    "qty": 1,
    "tp1": 1499000,
@@ -41,10 +44,13 @@
    "rr": 3.5,
    "why": "역대급 과매도 · 1주 단위라 지정가 1회 체결",
    "budget_krw": 1199000,
-   "filled_qty": 0,
-   "fill_date": null,
+   "filled_qty": 1,
+   "fill_date": "2026-10-23",
    "realized_krw": 0,
-   "last_eval": "2026-10-22"
+   "last_eval": "2026-10-23",
+   "open_qty": 1,
+   "stop": 1114000,
+   "fx_fill": 1324.800048828125
   },
   {
    "id": "NVDA-20261017",
@@ -107,7 +113,7 @@
    "filled_qty": 0,
    "fill_date": null,
    "realized_krw": 0,
-   "last_eval": "2026-10-22"
+   "last_eval": "2026-10-23"
   },
   {
    "id": "BTC-20261017",
@@ -128,14 +134,22 @@
    "filled_qty": 0,
    "fill_date": null,
    "realized_krw": 0,
-   "last_eval": "2026-10-22"
+   "last_eval": "2026-10-23"
   }
  ],
  "log": [
   {
    "d": "2026-10-17",
    "t": "계좌 개설 · 지정가 6건 예약"
+  },
+  {
+   "d": "2026-10-23",
+   "t": "삼성전자 205,000원 체결"
+  },
+  {
+   "d": "2026-10-23",
+   "t": "SK하이닉스 1,199,000원 체결"
   }
  ],
- "last_run": "2026-10-22T23:53"
+ "last_run": "2026-10-23T09:36"
 }
